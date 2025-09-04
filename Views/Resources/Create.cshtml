@@ -1,0 +1,188 @@
+@model ResourceBooking.Models.Resource
+
+@{
+    ViewData["Title"] = "Create Resource";
+}
+
+<h2>Create Resource</h2>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create" method="post" id="createResourceForm">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" required maxlength="200" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3" maxlength="1000"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Location" class="control-label"></label>
+                <input asp-for="Location" class="form-control" maxlength="200" />
+                <span asp-validation-for="Location" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Capacity" class="control-label"></label>
+                <input asp-for="Capacity" class="form-control" type="number" min="1" max="1000" required />
+                <span asp-validation-for="Capacity" class="text-danger"></span>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="IsAvailable" checked id="isAvailable" />
+                <label class="form-check-label" asp-for="IsAvailable">
+                    Is Available for Booking
+                </label>
+            </div>
+            
+            <!-- Unavailability Section -->
+            <div id="unavailabilitySection" style="display: none;">
+                <div class="card border-warning mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Unavailability Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label asp-for="UnavailabilityType" class="control-label">Reason Type</label>
+                            <select asp-for="UnavailabilityType" class="form-select">
+                                <option value="">Select reason type...</option>
+                                <option value="0">Maintenance</option>
+                                <option value="1">Repairs</option>
+                                <option value="2">Damaged</option>
+                                <option value="3">Cleaning</option>
+                                <option value="4">Renovation</option>
+                                <option value="5">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="UnavailabilityReason" class="control-label">Detailed Reason</label>
+                            <textarea asp-for="UnavailabilityReason" class="form-control" rows="2" maxlength="500" 
+                                      placeholder="Provide more details about why this resource is unavailable..."></textarea>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="UnavailableUntil" class="control-label">Available Again On</label>
+                            <input asp-for="UnavailableUntil" type="datetime-local" class="form-control" />
+                            <small class="form-text text-muted">Leave empty if availability date is unknown</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Create Resource</button>
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Resource Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Name should be descriptive and unique</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Include location for easy identification</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Set realistic capacity limits</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Resources are available by default</li>
+                </ul>
+                
+                <div class="mt-3">
+                    <h6 class="small">Unavailability Types:</h6>
+                    <div class="small text-muted">
+                        <span class="badge bg-warning text-dark me-1">Maintenance</span>
+                        <span class="badge bg-danger me-1">Repairs</span>
+                        <span class="badge bg-danger me-1">Damaged</span>
+                        <span class="badge bg-info me-1">Cleaning</span>
+                        <span class="badge bg-secondary me-1">Renovation</span>
+                        <span class="badge bg-dark">Other</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6 class="small">Examples:</h6>
+                    <div class="small text-muted">
+                        • Conference Room A<br>
+                        • Company Vehicle (ABC123)<br>
+                        • Projector #1<br>
+                        • Training Room B
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmResourceModal" tabindex="-1" aria-labelledby="confirmResourceLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmResourceLabel"><i class="bi bi-check2-square"></i> Confirm Resource Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <dl class="row mb-0 small">
+          <dt class="col-4">Name</dt>
+          <dd class="col-8" id="crName">-</dd>
+          <dt class="col-4">Location</dt>
+          <dd class="col-8" id="crLocation">-</dd>
+          <dt class="col-4">Capacity</dt>
+          <dd class="col-8" id="crCapacity">-</dd>
+          <dt class="col-4">Available</dt>
+          <dd class="col-8" id="crAvailable">Yes</dd>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Review</button>
+        <button type="button" class="btn btn-primary" id="confirmResourceSubmit">Confirm & Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const isAvailableCheckbox = document.getElementById('isAvailable');
+            const unavailabilitySection = document.getElementById('unavailabilitySection');
+            const form = document.getElementById('createResourceForm');
+            const modalEl = document.getElementById('confirmResourceModal');
+            const bsModal = new bootstrap.Modal(modalEl);
+            let confirmed = false;
+            
+            function toggleUnavailabilitySection() { unavailabilitySection.style.display = isAvailableCheckbox.checked ? 'none' : 'block'; }
+            toggleUnavailabilitySection();
+            isAvailableCheckbox.addEventListener('change', toggleUnavailabilitySection);
+
+            form.addEventListener('submit', function(e) {
+                if (confirmed) return; // allow second submit
+                e.preventDefault();
+                document.getElementById('crName').textContent = document.getElementById('Name').value || '-';
+                document.getElementById('crLocation').textContent = document.getElementById('Location').value || '-';
+                document.getElementById('crCapacity').textContent = document.getElementById('Capacity').value || '-';
+                document.getElementById('crAvailable').textContent = isAvailableCheckbox.checked ? 'Yes' : 'No';
+                bsModal.show();
+            });
+
+            document.getElementById('confirmResourceSubmit').addEventListener('click', function() {
+                confirmed = true;
+                bsModal.hide();
+                form.submit();
+            });
+        });
+    </script>
+}

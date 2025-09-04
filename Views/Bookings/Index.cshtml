@@ -1,0 +1,216 @@
+@model IEnumerable<ResourceBooking.Models.Booking>
+
+@{
+    ViewData["Title"] = "Bookings";
+}
+
+<h2>Bookings</h2>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <a asp-action="Create" class="btn btn-primary">Create New Booking</a>
+        <a asp-action="Calendar" class="btn btn-outline-info">Calendar View</a>
+        <a asp-action="Export" asp-route-resourceId="@ViewBag.CurrentResourceId" asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+    </div>
+    <div class="col-md-8">
+        <form asp-action="Index" method="get" class="row g-3">
+            <input type="hidden" name="page" value="1" />
+            <div class="col-md-3">
+                <select name="resourceId" class="form-select">
+                    <option value="">All Resources</option>
+                    @foreach (var resource in (List<ResourceBooking.Models.Resource>)ViewBag.Resources)
+                    {
+                        <option value="@resource.Id" selected="@(ViewBag.CurrentResourceId?.ToString() == resource.Id.ToString())">
+                            @resource.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="date" class="form-control" value="@(ViewBag.CurrentDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="Search..." value="@ViewBag.CurrentSearch" />
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-danger">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Pagination Info -->
+@if (ViewBag.TotalCount > 0)
+{
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted">
+            Showing @((ViewBag.CurrentPage - 1) * ViewBag.PageSize + 1) to @Math.Min(ViewBag.CurrentPage * ViewBag.PageSize, ViewBag.TotalCount) of @ViewBag.TotalCount bookings
+        </small>
+        <small class="text-muted">
+            Page @ViewBag.CurrentPage of @ViewBag.TotalPages
+        </small>
+    </div>
+}
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Booked By</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.Cancelled ? "table-secondary" : "")">
+                        <td>@Html.DisplayFor(modelItem => item.Resource.Name)</td>
+                        <td>@item.LocalStartTime.ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>@item.LocalEndTime.ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>@item.BookedByName</td>
+                        <td>@Html.DisplayFor(modelItem => item.Purpose)</td>
+                        <td>
+                            @if (item.Cancelled)
+                            {
+                                <span class="badge bg-danger">Cancelled</span>
+                            }
+                            else if (item.EndTime < DateTime.UtcNow)
+                            {
+                                <span class="badge bg-secondary">Completed</span>
+                            }
+                            else if (item.StartTime <= DateTime.UtcNow && item.EndTime > DateTime.UtcNow)
+                            {
+                                <span class="badge bg-success">In Progress</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary">Upcoming</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a asp-action="Ics" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success"><i class="bi bi-calendar-plus"></i> .ics</a>
+                                @if (!item.Cancelled && item.StartTime > DateTime.UtcNow && item.UserId == UserManager.GetUserId(User))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form asp-action="Cancel" asp-route-id="@item.Id" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this booking?')">Cancel</button>
+                                    </form>
+                                }
+                                else if (item.UserId != UserManager.GetUserId(User))
+                                {
+                                    <small class="text-muted ms-2">Not your booking</small>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav aria-label="Bookings pagination">
+            <ul class="pagination justify-content-center">
+                <!-- Previous Button -->
+                @if (ViewBag.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-page="@(ViewBag.CurrentPage - 1)"
+                           asp-route-resourceId="@ViewBag.CurrentResourceId"
+                           asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")"
+                           asp-route-search="@ViewBag.CurrentSearch">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                }
+
+                <!-- Page Numbers -->
+                @{
+                    int startPage = Math.Max(1, ViewBag.CurrentPage - 2);
+                    int endPage = Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-page="1"
+                           asp-route-resourceId="@ViewBag.CurrentResourceId"
+                           asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")"
+                           asp-route-search="@ViewBag.CurrentSearch">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-page="@i"
+                           asp-route-resourceId="@ViewBag.CurrentResourceId"
+                           asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")"
+                           asp-route-search="@ViewBag.CurrentSearch">@i</a>
+                    </li>
+                }
+
+                @if (endPage < ViewBag.TotalPages)
+                {
+                    @if (endPage < ViewBag.TotalPages - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-page="@ViewBag.TotalPages"
+                           asp-route-resourceId="@ViewBag.CurrentResourceId"
+                           asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")"
+                           asp-route-search="@ViewBag.CurrentSearch">@ViewBag.TotalPages</a>
+                    </li>
+                }
+
+                <!-- Next Button -->
+                @if (ViewBag.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-page="@(ViewBag.CurrentPage + 1)"
+                           asp-route-resourceId="@ViewBag.CurrentResourceId"
+                           asp-route-date="@ViewBag.CurrentDate?.ToString("yyyy-MM-dd")"
+                           asp-route-search="@ViewBag.CurrentSearch">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-info">
+        <h4>No bookings found</h4>
+        <p>There are no bookings that match your criteria. <a asp-action="Create" class="alert-link">Create a new booking</a> to get started.</p>
+    </div>
+}
+
+@{
+    // Inject UserManager for checking user ownership
+    @inject Microsoft.AspNetCore.Identity.UserManager<ResourceBooking.Models.ApplicationUser> UserManager
+}

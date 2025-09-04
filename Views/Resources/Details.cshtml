@@ -1,0 +1,113 @@
+@model ResourceBooking.Models.Resource
+
+@{
+    ViewData["Title"] = "Resource Details";
+}
+
+<h2>@Model.Name</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Description</dt>
+                    <dd class="col-sm-9">@Model.Description</dd>
+                    
+                    <dt class="col-sm-3">Location</dt>
+                    <dd class="col-sm-9">@Model.Location</dd>
+                    
+                    <dt class="col-sm-3">Capacity</dt>
+                    <dd class="col-sm-9">@Model.Capacity</dd>
+                    
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.IsAvailable)
+                        {
+                            <span class="badge bg-success">Available for booking</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Currently unavailable</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <h4 class="mt-4">Upcoming Bookings</h4>
+        @if (Model.Bookings != null && Model.Bookings.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Booked By</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in Model.Bookings)
+                        {
+                            <tr>
+                                <td>@booking.LocalStartTime.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@booking.LocalEndTime.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@booking.BookedByName</td>
+                                <td>@booking.Purpose</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <p class="mb-0">No upcoming bookings for this resource.</p>
+            </div>
+        }
+
+        <div class="mt-3">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit Resource</a>
+            @if (Model.IsAvailable)
+            {
+                <a asp-controller="Bookings" asp-action="Create" asp-route-resourceId="@Model.Id" class="btn btn-success">Book This Resource</a>
+            }
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Resource Info</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-geo-alt-fill text-primary"></i> <strong>Location:</strong> @Model.Location</li>
+                    <li><i class="bi bi-people-fill text-primary"></i> <strong>Capacity:</strong> @Model.Capacity people</li>
+                    <li><i class="bi bi-circle-fill text-@(Model.IsAvailable ? "success" : "warning")"></i> <strong>Status:</strong> @(Model.IsAvailable ? "Available" : "Unavailable")</li>
+                </ul>
+                
+                @if (Model.IsAvailable)
+                {
+                    <div class="alert alert-success py-2 mt-3">
+                        <small>
+                            <i class="bi bi-check-circle-fill"></i> <strong>Ready to book!</strong> This resource is available for new bookings.
+                        </small>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning py-2 mt-3">
+                        <small>
+                            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Unavailable:</strong> This resource cannot be booked at this time.
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

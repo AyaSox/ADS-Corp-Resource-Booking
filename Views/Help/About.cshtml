@@ -1,0 +1,172 @@
+@{
+    ViewData["Title"] = "About ADS Corp";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-building"></i> About ADS Corp</h2>
+        <p class="text-muted">Advanced Digital Solutions Corporation - Leading the way in resource management technology</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Company Overview -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-building"></i> Company Overview</h5>
+            </div>
+            <div class="card-body">
+                <h3>Advanced Digital Solutions Corporation</h3>
+                <p class="lead">Empowering businesses through innovative technology solutions and efficient resource management systems.</p>
+                
+                <p>ADS Corp has been at the forefront of digital transformation, helping organizations optimize their operations through cutting-edge software solutions. Our Resource Management System represents our commitment to creating user-friendly, professional-grade applications that solve real business challenges.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-award text-primary fs-1"></i>
+                        <h5>Excellence</h5>
+                        <p class="small">Committed to delivering high-quality solutions that exceed expectations</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-people text-success fs-1"></i>
+                        <h5>Collaboration</h5>
+                        <p class="small">Building tools that enhance teamwork and resource sharing</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-lightning text-warning fs-1"></i>
+                        <h5>Innovation</h5>
+                        <p class="small">Leveraging latest technologies to create powerful business solutions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Our Mission -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-target"></i> Our Mission</h5>
+            </div>
+            <div class="card-body">
+                <blockquote class="blockquote">
+                    <p>"To provide businesses with intelligent, user-friendly software solutions that streamline operations, enhance productivity, and foster collaboration."</p>
+                    <footer class="blockquote-footer">ADS Corp Executive Team</footer>
+                </blockquote>
+                
+                <p>We believe that technology should simplify, not complicate business processes. Our Resource Management System exemplifies this philosophy by providing an intuitive, comprehensive solution for managing shared resources efficiently.</p>
+            </div>
+        </div>
+
+        <!-- System Features -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-gear-wide-connected"></i> System Capabilities</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Core Features</h6>
+                        <ul class="small">
+                            <li>Intelligent booking system with conflict detection</li>
+                            <li>Interactive calendar visualization</li>
+                            <li>Recurring booking management</li>
+                            <li>Real-time availability tracking</li>
+                            <li>Comprehensive reporting and analytics</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Professional Features</h6>
+                        <ul class="small">
+                            <li>Professional email notifications</li>
+                            <li>User management and authentication</li>
+                            <li>Resource unavailability tracking</li>
+                            <li>Mobile-responsive design</li>
+                            <li>Advanced search and filtering</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Contact Information -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="bi bi-geo-alt"></i> Contact Information</h5>
+            </div>
+            <div class="card-body">
+                <address>
+                    <strong>ADS Corp Headquarters</strong><br>
+                    123 Innovation Drive<br>
+                    Tech City, TC 12345<br>
+                    <br>
+                    <i class="bi bi-telephone"></i> <strong>Phone:</strong> +27 (0) 11 123-4567<br>
+                    <i class="bi bi-envelope"></i> <strong>Email:</strong> info@adscorp.com<br>
+                    <i class="bi bi-globe"></i> <strong>Website:</strong> www.adscorp.com
+                </address>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="bi bi-cpu"></i> Technical Specifications</h5>
+            </div>
+            <div class="card-body">
+                <h6>System Architecture</h6>
+                <ul class="small">
+                    <li><strong>Framework:</strong> .NET 8</li>
+                    <li><strong>Database:</strong> SQL Server</li>
+                    <li><strong>UI:</strong> Bootstrap 5</li>
+                    <li><strong>Authentication:</strong> ASP.NET Identity</li>
+                    <li><strong>Calendar:</strong> FullCalendar</li>
+                </ul>
+                
+                <h6 class="mt-3">Security Features</h6>
+                <ul class="small">
+                    <li>Secure user authentication</li>
+                    <li>Data validation and sanitization</li>
+                    <li>HTTPS encryption</li>
+                    <li>Session management</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Support -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-headset"></i> Support Services</h5>
+            </div>
+            <div class="card-body">
+                <h6>Available Support</h6>
+                <ul class="small">
+                    <li>Email support during business hours</li>
+                    <li>Comprehensive user documentation</li>
+                    <li>System administration guide</li>
+                    <li>Training materials and resources</li>
+                </ul>
+                
+                <div class="mt-3">
+                    <a asp-action="Contact" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-chat-dots"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="text-center">
+        <p class="text-muted">&copy; @DateTime.Now.Year Advanced Digital Solutions Corporation. All rights reserved.</p>
+        <p class="text-muted small">Committed to excellence in business technology solutions.</p>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>

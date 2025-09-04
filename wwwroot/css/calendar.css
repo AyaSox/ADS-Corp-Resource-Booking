@@ -1,0 +1,59 @@
+#calendar {
+    max-width: 100%;
+    margin: 0 auto;
+    font-size: 0.9rem;
+}
+
+.fc-event {
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.fc-event:hover {
+    opacity: 0.8;
+}
+
+.fc-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+}
+
+.fc-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.fc-daygrid-event {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-modal {
+    z-index: 1050;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+    .fc-toolbar {
+        font-size: 0.8rem;
+    }
+    
+    .fc-button {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.2rem;
+    }
+    
+    #calendar {
+        font-size: 0.8rem;
+    }
+}

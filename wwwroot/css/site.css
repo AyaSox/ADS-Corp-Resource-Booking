@@ -1,0 +1,262 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* ===== Global compact mode ===== */
+body.app-compact .navbar {
+  padding-top: .35rem;
+  padding-bottom: .35rem;
+}
+body.app-compact .navbar .navbar-brand {
+  font-size: 1rem;
+  padding: .25rem 0;
+}
+body.app-compact .navbar .nav-link {
+  padding: .25rem .5rem;
+  font-size: .95rem;
+}
+body.app-compact .navbar .nav-link .bi,
+body.app-compact .navbar .navbar-brand .bi {
+  font-size: 1rem;
+  margin-right: .25rem;
+}
+@media (min-width: 992px) {
+  body.app-compact .navbar .input-group .form-control {
+    width: 160px !important;
+  }
+}
+
+body.app-compact main {
+  padding-top: .25rem;
+}
+body.app-compact .card {
+  margin-bottom: .75rem;
+}
+body.app-compact .card .card-body {
+  padding: .75rem;
+}
+body.app-compact .card .card-header {
+  padding: .5rem .75rem;
+}
+body.app-compact .card .display-4 {
+  font-size: 2rem !important;
+}
+body.app-compact .card h3 {
+  font-size: 1.15rem;
+}
+body.app-compact .card h2 {
+  font-size: 1.35rem;
+}
+body.app-compact .card small {
+  font-size: .8rem;
+}
+body.app-compact .table {
+  font-size: .95rem;
+  margin-bottom: .5rem;
+}
+body.app-compact .table > :not(caption) > * > * {
+  padding: .4rem .5rem;
+}
+body.app-compact .progress {
+  height: 8px;
+}
+
+/* Page-scoped optional helper (still usable) */
+.page-compact h2 {
+  font-size: 1.6rem;
+  margin-bottom: .25rem;
+}
+.page-compact .row.mb-4 {
+  margin-bottom: 1rem !important;
+}
+.page-compact .alert {
+  padding: .35rem .5rem;
+  margin-bottom: .5rem;
+}
+.page-compact .progress {
+  height: 8px;
+}
+.page-compact .fs-1 { /* huge icons in empty states */
+  font-size: 2.5rem !important;
+}
+
+/* Calendar compact */
+.fc-toolbar { margin: .25rem !important; }
+.fc-toolbar .fc-toolbar-chunk { padding: 0 .25rem; }
+
+/* Navbar search box width tweak */
+.navbar .input-group input[type="text"] { max-width: 220px; }
+
+/* Toast container spacing */
+.toast-container { z-index: 1080; }
+
+/* Navbar compact and no-overlap tweaks */
+.navbar .navbar-nav .nav-link { white-space: nowrap; }
+.navbar .navbar-brand { white-space: nowrap; }
+@media (max-width: 1200px) {
+  .navbar .nav-link span { display: none; } /* hide text labels on smaller widths, keep icons */
+}
+.navbar .dropdown-menu { min-width: 220px; }
+
+/* Navbar responsive and compact styles */
+.navbar .navbar-brand { 
+    white-space: nowrap; 
+    font-size: 1rem;
+    padding: .25rem 0;
+}
+
+.navbar .nav-link { 
+    white-space: nowrap; 
+    padding: .5rem .4rem;
+    font-size: .9rem;
+}
+
+.navbar .nav-link .bi {
+    font-size: 1rem;
+    margin-right: .2rem;
+}
+
+/* Progressive text hiding for responsive navbar */
+@media (max-width: 1199px) {
+    .navbar .nav-link span { display: none !important; }
+    .navbar .nav-link { padding: .5rem .3rem; }
+}
+
+@media (max-width: 991px) {
+    /* Mobile hamburger menu adjustments */
+    .navbar-collapse .navbar-nav { 
+        margin-top: .5rem; 
+    }
+    .navbar-collapse .nav-link span { 
+        display: inline !important; 
+        margin-left: .5rem;
+    }
+    .navbar-collapse .nav-link { 
+        padding: .5rem 1rem; 
+    }
+    /* Adjust toast position for mobile */
+    .toast-container { 
+        top: 70px !important;
+    }
+}
+
+/* Search box responsive */
+.navbar .input-group {
+    min-width: 150px;
+}
+
+@media (max-width: 575px) {
+    .navbar .input-group {
+        min-width: 120px;
+        margin: .5rem 0;
+    }
+}
+
+/* Notification dropdown positioning */
+.notification-dropdown {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.notification-item {
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Footer compact */
+.footer {
+    padding: 1rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.footer .small {
+    font-size: .8rem;
+}
+
+.footer a {
+    color: #6c757d;
+}
+
+.footer a:hover {
+    color: #495057;
+}
+
+/* Dropdown menu improvements */
+.dropdown-menu {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: .5rem 1rem;
+    font-size: .9rem;
+}
+
+.dropdown-item i {
+    width: 1.2rem;
+}
+
+/* Toast container positioning - FINAL PERFECT POSITION */
+.toast-container { 
+    z-index: 1080; 
+    top: 100px !important; /* THE perfect spacing - no overlap, clean separation */
+    padding-top: 0.25rem;
+    right: 1rem;
+}
+
+/* Global compact tweaks */
+body.app-compact .navbar { 
+    padding-top: .35rem; 
+    padding-bottom: .35rem; 
+    min-height: 56px; /* Ensure consistent navbar height */
+}
+body.app-compact .navbar .nav-link { padding: .25rem .5rem; }
+body.app-compact main { padding-top: .25rem; }
+
+h1, .h1 { font-size: 1.6rem; }
+h2, .h2 { font-size: 1.35rem; }
+h3, .h3 { font-size: 1.15rem; }
+
+.container-fluid { padding-left: .75rem; padding-right: .75rem; }
+.card { margin-bottom: .75rem; }
+.card-body { padding: .75rem; }
+.card-header { padding: .5rem .75rem; }
+
+.table { margin-bottom: .5rem; }
+.table td, .table th { padding: .4rem .5rem; vertical-align: middle; }
+.table .btn { padding: .15rem .4rem; font-size: .85rem; }
+
+.form-control, .form-select { padding: .3rem .5rem; }
+.input-group > .form-control, .input-group > .form-select { padding: .3rem .5rem; }
+.btn { padding: .3rem .6rem; }
+
+.alert { padding: .35rem .5rem; margin-bottom: .5rem; }
+.badge { padding: .35em .5em; }
+
+/* Calendar compact */
+.fc-toolbar { margin: .25rem !important; }
+.fc-toolbar .fc-toolbar-chunk { padding: 0 .25rem; }

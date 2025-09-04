@@ -1,0 +1,241 @@
+@{
+    ViewData["Title"] = "Help & User Guide";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-question-circle"></i> Help & User Guide</h2>
+        <p class="text-muted">Learn how to use the ADS Corp Resource Management System effectively</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Getting Started -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-play-circle"></i> Getting Started</h5>
+            </div>
+            <div class="card-body">
+                <h6>Welcome to ADS Corp Resource Management!</h6>
+                <p>This system helps you efficiently book and manage shared resources like conference rooms, vehicles, and equipment.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-1-circle text-primary me-1"></i> Login to Your Account</h6>
+                        <p class="small">Use your company email and password to access the system. New users receive a welcome email with setup instructions.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-2-circle text-primary me-1"></i> Explore the Dashboard</h6>
+                        <p class="small">View your upcoming bookings, system statistics, and quick access to commonly used features.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Resources -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-calendar-plus"></i> How to Book Resources</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-calendar-plus me-1"></i> Create a New Booking</h6>
+                        <ol class="small">
+                            <li>Click "New Booking" from the dashboard or navigation</li>
+                            <li>Select your desired resource from the dropdown</li>
+                            <li>Choose date and time (start/end)</li>
+                            <li>Enter the purpose of your booking</li>
+                            <li>Click "Create Booking" to confirm</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-arrow-repeat me-1"></i> Recurring Bookings</h6>
+                        <ol class="small">
+                            <li>Check "Recurring Booking" option</li>
+                            <li>Select frequency (Daily/Weekly/Monthly)</li>
+                            <li>Choose how many times to repeat</li>
+                            <li>Set end date if needed</li>
+                            <li>System creates all instances automatically</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <small><i class="bi bi-info-circle"></i> <strong>Conflict Detection:</strong> The system automatically prevents double-booking and shows you alternative times if conflicts exist.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Managing Bookings -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-gear"></i> Managing Your Bookings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-pencil-square me-1"></i> Edit Bookings</h6>
+                        <ul class="small">
+                            <li>Go to "Bookings" page</li>
+                            <li>Click "Edit" on your booking</li>
+                            <li>Modify details as needed</li>
+                            <li>Save changes</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-x-circle me-1"></i> Cancel Bookings</h6>
+                        <ul class="small">
+                            <li>Find your booking in the list</li>
+                            <li>Click "Cancel" button</li>
+                            <li>Confirm cancellation</li>
+                            <li>Email notification sent</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-calendar3 me-1"></i> View Calendar</h6>
+                        <ul class="small">
+                            <li>Click "Calendar" in navigation</li>
+                            <li>See all bookings visually</li>
+                            <li>Filter by resource</li>
+                            <li>Click events for details</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Guide -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="bi bi-star"></i> Key Features</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-search me-1"></i> Search & Filter</h6>
+                        <p class="small">Use the search box in the navigation to quickly find resources, bookings, or users. Filter results by date, resource type, or availability.</p>
+                        
+                        <h6><i class="bi bi-bell me-1"></i> Notifications</h6>
+                        <p class="small">Get notified via email and in-app notifications for booking confirmations, cancellations, and important updates.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-bar-chart me-1"></i> Reports & Analytics</h6>
+                        <p class="small">View detailed reports on resource utilization, popular resources, and usage statistics to optimize resource management.</p>
+                        
+                        <h6><i class="bi bi-tools me-1"></i> Resource Management</h6>
+                        <p class="small">Administrators can add, edit, and manage resources, including setting unavailability periods for maintenance.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips & Best Practices -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5><i class="bi bi-lightbulb"></i> Tips & Best Practices</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-clipboard-check me-1"></i> Booking Tips</h6>
+                        <ul class="small">
+                            <li>Book resources in advance for better availability</li>
+                            <li>Cancel unused bookings to free up resources</li>
+                            <li>Use clear, descriptive purposes for your bookings</li>
+                            <li>Check resource capacity before booking</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-bullseye me-1"></i> Efficiency Tips</h6>
+                        <ul class="small">
+                            <li>Use recurring bookings for regular meetings</li>
+                            <li>Check the calendar view for resource availability</li>
+                            <li>Set up email notifications for reminders</li>
+                            <li>Use the dashboard for quick overview</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Links -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="bi bi-link-45deg"></i> Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create New Booking
+                    </a>
+                    <a asp-controller="Bookings" asp-action="Calendar" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar"></i> View Calendar
+                    </a>
+                    <a asp-controller="Resources" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-building"></i> Browse Resources
+                    </a>
+                    <a asp-controller="Reports" asp-action="Index" class="btn btn-outline-info">
+                        <i class="bi bi-bar-chart"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="bi bi-headset"></i> Need Help?</h5>
+            </div>
+            <div class="card-body">
+                <h6>Contact ADS Corp Support</h6>
+                <p class="small">
+                    <i class="bi bi-envelope"></i> <strong>Email:</strong><br>
+                    support@adscorp.com
+                </p>
+                <p class="small">
+                    <i class="bi bi-telephone"></i> <strong>Phone:</strong><br>
+                    +27 (0) 11 123-4567
+                </p>
+                <p class="small">
+                    <i class="bi bi-clock"></i> <strong>Hours:</strong><br>
+                    Monday - Friday, 8 AM - 6 PM
+                </p>
+                
+                <a asp-action="Contact" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-chat-dots"></i> Contact Support
+                </a>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">
+                    <strong>ADS Corp Resource Management System</strong><br>
+                    Version 1.0<br>
+                    Built on .NET 8
+                </p>
+                
+                <div class="mt-3">
+                    <a asp-action="About" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-building"></i> About ADS Corp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>

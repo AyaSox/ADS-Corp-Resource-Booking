@@ -1,0 +1,349 @@
+@model ResourceBooking.Controllers.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <p class="text-muted">Welcome back, @User.Identity?.Name! Here's your resource booking overview.</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Resources</h6>
+                        <h3 class="mb-0">@Model.DashboardStats.TotalResources</h3>
+                        <small>@Model.DashboardStats.AvailableResources available</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="bi bi-building display-4" style="opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Today's Bookings</h6>
+                        <h3 class="mb-0">@Model.DashboardStats.TotalBookingsToday</h3>
+                        <small>Active bookings for today</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="bi bi-calendar-check display-4" style="opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">This Month</h6>
+                        <h3 class="mb-0">@Model.DashboardStats.TotalBookingsThisMonth</h3>
+                        <small>Total bookings this month</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="bi bi-graph-up display-4" style="opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Avg. Utilization</h6>
+                        <h3 class="mb-0">@Model.DashboardStats.AverageUtilizationPercentage%</h3>
+                        <small>Resource usage efficiency</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="bi bi-pie-chart display-4" style="opacity: 0.8;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unavailable Resources Alert -->
+@if (Model.DashboardStats.UnavailableResourcesInfo.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h6><i class="bi bi-exclamation-triangle"></i> Unavailable Resources (@Model.DashboardStats.UnavailableResources)</h6>
+                <div class="row">
+                    @foreach (var resource in Model.DashboardStats.UnavailableResourcesInfo)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge @resource.BadgeClass me-2">@resource.Type</span>
+                                <div>
+                                    <strong>@resource.Name</strong><br>
+                                    <small class="text-muted">@resource.Reason</small>
+                                    @if (resource.UnavailableUntil.HasValue)
+                                    {
+                                        <br><small class="text-muted">Until: @resource.UnavailableUntil.Value.ToLocalTime().ToString("MMM dd, yyyy")</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row">
+    <!-- Your Bookings Today -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-calendar-event"></i> Your Bookings Today</h5>
+                <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> New Booking
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.UserTodayBookings.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var booking in Model.UserTodayBookings)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">@booking.Resource.Name</h6>
+                                        <p class="mb-1">@booking.Purpose</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> @booking.TimeRange
+                                            <i class="bi bi-geo-alt ms-2"></i> @booking.Resource.Location
+                                            @if (booking.IsRecurring)
+                                            {
+                                                <span class="badge bg-info ms-2">
+                                                    <i class="bi bi-arrow-repeat"></i> @booking.RecurrenceDisplay
+                                                </span>
+                                            }
+                                        </small>
+                                    </div>
+                                    <div>
+                                        @if (booking.IsUpcoming)
+                                        {
+                                            <span class="badge bg-success">Upcoming</span>
+                                        }
+                                        else if (booking.IsInPast)
+                                        {
+                                            <span class="badge bg-secondary">Completed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary">Active</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">No bookings for today (@DateTime.Today.ToString("MMM dd, yyyy"))</p>
+                        <a asp-controller="Bookings" asp-action="Create" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle"></i> Create Your First Booking
+                        </a>
+                        <br>
+                        <small class="text-muted mt-2">
+                            Or <a asp-controller="Bookings" asp-action="Index">view all existing bookings</a>
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Today's All Bookings -->
+        @if (Model.DashboardStats.TodayBookings.Any())
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-day"></i> All Bookings Today</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @foreach (var booking in Model.DashboardStats.TodayBookings.Take(5))
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@booking.ResourceName</strong>
+                                        <span class="text-muted">by @booking.UserName</span>
+                                        @if (booking.IsRecurring)
+                                        {
+                                            <span class="badge bg-info ms-1">
+                                                <i class="bi bi-arrow-repeat"></i> Recurring
+                                            </span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@booking.StartTime.ToString("HH:mm") - @booking.EndTime.ToString("HH:mm")</small>
+                                </div>
+                                <small class="text-muted">@booking.Purpose</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (Model.DashboardStats.TotalBookingsThisMonth > 0)
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-month"></i> Recent Bookings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">No bookings for today, but there are @Model.DashboardStats.TotalBookingsThisMonth bookings this month.</p>
+                    <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
+                        <i class="bi bi-list"></i> View All Bookings
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Your Statistics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-person-circle"></i> Your Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">@Model.UserStats.TotalBookings</h4>
+                        <small class="text-muted">Total Bookings</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">@Model.UserStats.TotalHoursBooked</h4>
+                        <small class="text-muted">Hours Booked</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-info">@Model.UserStats.AverageBookingDuration</h4>
+                        <small class="text-muted">Avg Duration (hrs)</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">@Model.UserStats.CancellationRate.ToString("F1")%</h4>
+                        <small class="text-muted">Cancellation Rate</small>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.UserStats.MostUsedResource))
+                {
+                    <div class="mt-3">
+                        <small class="text-muted">Most Used Resource:</small><br>
+                        <strong>@Model.UserStats.MostUsedResource</strong>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Popular Resources -->
+        @if (Model.PopularResources.Any())
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-trophy"></i> Popular Resources</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var resource in Model.PopularResources)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>@resource.ResourceName</strong><br>
+                                <small class="text-muted">@resource.BookingCount bookings, @resource.TotalHours hrs</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-primary">@resource.UtilizationPercentage%</div>
+                                <div class="progress" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar" role="progressbar" style="width: @resource.UtilizationPercentage%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Upcoming Bookings -->
+        @if (Model.UserUpcomingBookings.Any())
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> Your Upcoming Bookings</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var booking in Model.UserUpcomingBookings)
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>@booking.Resource.Name</strong>
+                                @if (booking.IsRecurring)
+                                {
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </span>
+                                }
+                            </div>
+                            <small class="text-muted">
+                                @booking.LocalStartTime.ToString("MMM dd, HH:mm") - @booking.LocalEndTime.ToString("HH:mm")
+                            </small>
+                            <div class="text-truncate">
+                                <small>@booking.Purpose</small>
+                            </div>
+                        </div>
+                    }
+                    <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary btn-sm w-100">
+                        View All Bookings
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> New Booking
+                    </a>
+                    <a asp-controller="Bookings" asp-action="Calendar" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar"></i> View Calendar
+                    </a>
+                    <a asp-controller="Resources" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-building"></i> Browse Resources
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

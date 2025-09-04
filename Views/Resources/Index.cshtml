@@ -1,0 +1,102 @@
+@model IEnumerable<ResourceBooking.Models.Resource>
+
+@{
+    ViewData["Title"] = "Resources";
+}
+
+<h2>Resources</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <a asp-action="Create" class="btn btn-primary">Create New Resource</a>
+    </div>
+    <div class="col-md-6">
+        <form asp-action="Index" method="get">
+            <div class="input-group">
+                <input type="search" name="search" class="form-control" placeholder="Search resources..." value="@ViewBag.CurrentSearch" />
+                <button class="btn btn-outline-secondary" type="submit">Search</button>
+                @if (!string.IsNullOrEmpty(ViewBag.CurrentSearch))
+                {
+                    <a asp-action="Index" class="btn btn-outline-danger">Clear</a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Location</th>
+                <th>Capacity</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr class="@(!item.IsAvailable ? "table-secondary" : "")">
+                    <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Location)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Capacity)</td>
+                    <td>
+                        @if (item.IsAvailable)
+                        {
+                            <span class="badge bg-success">Available</span>
+                        }
+                        else if (item.IsTemporarilyUnavailable)
+                        {
+                            <span class="badge bg-warning text-dark">Temporarily Unavailable</span>
+                        }
+                        else if (item.IsPermanentlyDeactivated)
+                        {
+                            <span class="badge bg-dark text-white">Deactivated</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Unavailable</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                            @if (item.IsAvailable)
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                <a asp-controller="Bookings" asp-action="Create" asp-route-resourceId="@item.Id" class="btn btn-sm btn-success">Book</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Deactivate</a>
+                            }
+                            else if (item.IsTemporarilyUnavailable)
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                <small class="text-muted">Temporarily unavailable</small>
+                            }
+                            else if (item.IsPermanentlyDeactivated)
+                            {
+                                <small class="text-muted">Permanently deactivated</small>
+                            }
+                            else
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                <small class="text-muted">Unavailable</small>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <h4>No resources found</h4>
+        <p>There are no resources that match your search criteria. <a asp-action="Create" class="alert-link">Create a new resource</a> to get started.</p>
+    </div>
+}

@@ -1,0 +1,105 @@
+@model ResourceBooking.Models.Resource
+
+@{
+    ViewData["Title"] = "Deactivate Resource";
+}
+
+<h2>Deactivate Resource</h2>
+
+<div class="alert alert-warning">
+    <h4><i class="bi bi-exclamation-triangle"></i> Are you sure you want to deactivate this resource?</h4>
+    <p>This resource will be permanently marked as unavailable and will no longer accept new bookings. All historical booking data will be preserved.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Resource Details</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Name:</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+            
+            <dt class="col-sm-3">Description:</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Description)</dd>
+            
+            <dt class="col-sm-3">Location:</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Location)</dd>
+            
+            <dt class="col-sm-3">Capacity:</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Capacity)</dd>
+            
+            <dt class="col-sm-3">Current Status:</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsAvailable)
+                {
+                    <span class="badge bg-success">Available</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark">Unavailable</span>
+                    @if (!string.IsNullOrEmpty(Model.UnavailabilityReason))
+                    {
+                        <br><small class="text-muted">Reason: @Model.UnavailabilityReason</small>
+                    }
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h5>Deactivation Reason</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="Id" />
+            
+            <div class="mb-3">
+                <label class="form-label">Why are you deactivating this resource?</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="deactivationReason" id="doesNotExist" value="DoesNotExist" checked>
+                    <label class="form-check-label" for="doesNotExist">
+                        <strong>Resource does not exist</strong>
+                        <small class="text-muted d-block">The physical resource is not available or never existed</small>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="deactivationReason" id="addedMistakenly" value="AddedMistakenly">
+                    <label class="form-check-label" for="addedMistakenly">
+                        <strong>Added mistakenly</strong>
+                        <small class="text-muted d-block">This resource was created by mistake and should not have been added</small>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="deactivationReason" id="retired" value="Retired">
+                    <label class="form-check-label" for="retired">
+                        <strong>Resource retired</strong>
+                        <small class="text-muted d-block">The resource has been permanently removed from service</small>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="additionalNotes" class="form-label">Additional Notes (Optional)</label>
+                <textarea class="form-control" id="additionalNotes" name="additionalNotes" rows="2" placeholder="Add any additional details about the deactivation..."></textarea>
+            </div>
+            
+            <div class="alert alert-info">
+                <small>
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>Note:</strong> This is different from temporary unavailability (maintenance, repairs, etc.) which can be set via the Edit function. 
+                    Deactivation is intended for permanent removal from the booking system.
+                </small>
+            </div>
+            
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to permanently deactivate this resource? This action marks it as unavailable indefinitely.')">
+                <i class="bi bi-power"></i> Deactivate Resource
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+        </form>
+    </div>
+</div>

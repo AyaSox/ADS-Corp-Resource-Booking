@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "Email Test - ADS Corp";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-envelope-check"></i> ADS Corp Email System Testing</h2>
+        <p class="text-muted">Test the corporate email notification system with professional ADS Corp branding</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Welcome Email Test -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4><i class="bi bi-envelope-heart"></i> Welcome Email Testing</h4>
+                <p class="mb-0">Test the professional welcome email for new ADS Corp users</p>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendWelcomeEmail" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="toEmail" class="form-label">Recipient Email Address</label>
+                                <input type="email" class="form-control" id="toEmail" name="toEmail" 
+                                       value="sipho@company.com" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="userName" class="form-label">User Full Name</label>
+                                <input type="text" class="form-control" id="userName" name="userName" 
+                                       value="Sipho Mthembu" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-send"></i> Send ADS Corp Welcome Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Custom Email Test -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="bi bi-envelope-paper"></i> Custom Email Testing</h4>
+                <p class="mb-0">Send custom test emails with your own content</p>
+            </div>
+            <div class="card-body">
+                <form asp-action="SendTestEmail" method="post">
+                    <div class="form-group mb-3">
+                        <label for="customToEmail" class="form-label">To Email</label>
+                        <input type="email" class="form-control" id="customToEmail" name="toEmail" 
+                               value="sipho@company.com" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" 
+                               value="Test Email from ADS Corp Resource Booking System" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="body" class="form-label">Body</label>
+                        <textarea class="form-control" id="body" name="body" rows="8" required 
+                                  placeholder="Enter your email content here...">Hello,
+
+This is a test email from the ADS Corp Resource Booking System.
+
+Our professional email system includes:
+- Corporate branding and styling
+- Mobile-responsive templates
+- Professional HTML design
+- Company contact information
+
+Best regards,
+The ADS Corp Team</textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send"></i> Send Custom Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- System Status -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-building"></i> ADS Corp Email Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                    <h6 class="mt-2">System Operational</h6>
+                </div>
+                
+                <hr>
+                
+                <h6>Company Configuration:</h6>
+                <ul class="list-unstyled small">
+                    <li><strong>Company:</strong> ADS Corp</li>
+                    <li><strong>Full Name:</strong> Advanced Digital Solutions Corporation</li>
+                    <li><strong>From Email:</strong> noreply@adscorp.com</li>
+                    <li><strong>Support:</strong> support@adscorp.com</li>
+                    <li><strong>Phone:</strong> (555) 123-4567</li>
+                    <li><strong>Website:</strong> www.adscorp.com</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Email Features:</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check text-success"></i> Professional welcome emails</li>
+                    <li><i class="bi bi-check text-success"></i> Booking confirmations</li>
+                    <li><i class="bi bi-check text-success"></i> Cancellation notices</li>
+                    <li><i class="bi bi-check text-success"></i> Corporate branding</li>
+                    <li><i class="bi bi-check text-success"></i> Mobile responsive</li>
+                    <li><i class="bi bi-check text-success"></i> Professional templates</li>
+                </ul>
+                
+                <div class="alert alert-warning py-2 mt-3">
+                    <small><i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Dev Mode:</strong> Emails are logged to console for testing.</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Welcome Email Features -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-star"></i> Welcome Email Features</h5>
+            </div>
+            <div class="card-body">
+                <h6>Professional Elements:</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check text-success"></i> ADS Corp branding</li>
+                    <li><i class="bi bi-check text-success"></i> Gradient header design</li>
+                    <li><i class="bi bi-check text-success"></i> Feature showcase grid</li>
+                    <li><i class="bi bi-check text-success"></i> Account information</li>
+                    <li><i class="bi bi-check text-success"></i> Pro tips for new users</li>
+                    <li><i class="bi bi-check text-success"></i> Contact information</li>
+                    <li><i class="bi bi-check text-success"></i> Call-to-action buttons</li>
+                    <li><i class="bi bi-check text-success"></i> Mobile responsive design</li>
+                </ul>
+                
+                <div class="alert alert-success py-2 mt-3">
+                    <small><i class="bi bi-lightbulb"></i> 
+                    <strong>Tip:</strong> Welcome emails are automatically sent to new users!</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5><i class="bi bi-gear"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-house"></i> Back to Dashboard
+                    </a>
+                    <a asp-controller="Bookings" asp-action="Create" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-plus"></i> Create Test Booking
+                    </a>
+                    <a asp-controller="Notifications" asp-action="Index" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-bell"></i> View Notifications
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["EmailResult"] != null)
+{
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info alert-dismissible fade show">
+                <h5><i class="bi bi-envelope-check"></i> Email Test Result</h5>
+                <p>@TempData["EmailResult"]</p>
+                <p><strong>Note:</strong> In development mode, emails are logged to the console. Check your application logs to see the full email content with ADS Corp branding.</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+}
