@@ -232,8 +232,8 @@ ResourceBooking/
 ├── wwwroot/              # Static Files (CSS, JS, Images)
 ├── Documentation/        # Project Documentation
 ├── README.md             # This file
-├── TESTING-GUIDE.md      # Comprehensive testing guide
-└── PORTFOLIO-SHOWCASE.md # Visual feature showcase
+├── LICENSE               # MIT License
+└── .gitignore            # Git exclusions
 ```
 
 ## Complete Testing Checklist
@@ -286,19 +286,6 @@ ResourceBooking/
   }
 }
 ```
-
-## Future Enhancement Ideas
-
-- **Mobile App**: React Native or Flutter mobile application
-- **API Endpoints**: RESTful API for third-party integrations
-- **Advanced Reporting**: Power BI integration and custom dashboards
-- **Approval Workflow**: Multi-step booking approval process
-- **External Calendar Sync**: Outlook/Google Calendar integration
-- **Multi-tenant Support**: Support for multiple companies
-- **Resource Categories**: Advanced categorization and tagging
-- **Room Equipment**: Track projectors, whiteboards, etc.
-- **Capacity Management**: Advanced occupancy and social distancing
-- **QR Code Check-in**: Mobile check-in for booked resources
 
 ## Contributing
 
