@@ -295,9 +295,6 @@ ResourceBooking/
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contact & Support
 
@@ -308,7 +305,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Company Information (Demo)
 - **Company**: ADS Corp (Advanced Digital Solutions Corporation)
 - **Email**: support@adscorp.com
-- **Phone**: +27 (0) 11 123-4567
+- **Phone**: +27 (0) 10 123-4567
 - **System**: Professional Resource Management Solution
 
 ---
