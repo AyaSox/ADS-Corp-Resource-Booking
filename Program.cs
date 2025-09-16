@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ResourceBooking.Data;
 using ResourceBooking.Models;
 using ResourceBooking.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ if (!string.IsNullOrEmpty(databaseUrl))
     
     var npgsqlConnectionString = $"Host={databaseUri.Host};" +
                                $"Port={databaseUri.Port};" +
-                               $"Database={databaseUri.LocalPath.Substring(1)};" +
+                               $"Database={databaseUri.LocalPath.TrimStart('/')};" +
                                $"Username={userInfo[0]};" +
                                $"Password={userInfo[1]};" +
                                $"SSL Mode=Require;" +
@@ -60,13 +61,21 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseMigrationsEndPoint();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+// Respect proxy headers on Render to avoid redirect loops and get correct scheme/remote IP
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    KnownNetworks = { },
+    KnownProxies = { }
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -84,21 +93,27 @@ app.MapRazorPages();
 // Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
     try
     {
-        // Apply migrations
         context.Database.Migrate();
-        
-        // Seed data
-        await DataSeeder.SeedAsync(context);
-        await IdentityDataSeeder.SeedUsersAsync(userManager);
+
+        // Seed identity users first
+        var identityLogger = services.GetRequiredService<ILogger<IdentityDataSeeder>>();
+        var identitySeeder = new IdentityDataSeeder(context, userManager, identityLogger);
+        await identitySeeder.SeedAsync();
+
+        // Seed application data
+        var dataLogger = services.GetRequiredService<ILogger<DataSeeder>>();
+        var dataSeeder = new DataSeeder(context, dataLogger);
+        await dataSeeder.SeedAsync();
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
     }
 }
