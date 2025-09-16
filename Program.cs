@@ -3,49 +3,64 @@ using Microsoft.EntityFrameworkCore;
 using ResourceBooking.Data;
 using ResourceBooking.Models;
 using ResourceBooking.Services;
-using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Database configuration - support both SQL Server and PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Render PostgreSQL - parse DATABASE_URL format: postgres://user:password@host:port/database
+    var databaseUri = new Uri(databaseUrl);
+    var userInfo = databaseUri.UserInfo.Split(':');
+    
+    var npgsqlConnectionString = $"Host={databaseUri.Host};" +
+                               $"Port={databaseUri.Port};" +
+                               $"Database={databaseUri.LocalPath.Substring(1)};" +
+                               $"Username={userInfo[0]};" +
+                               $"Password={userInfo[1]};" +
+                               $"SSL Mode=Require;" +
+                               $"Trust Server Certificate=true";
+    
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(npgsqlConnectionString));
+}
+else
+{
+    // Local development - SQL Server
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(connectionString ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+}
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
-    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
     options.Password.RequiredLength = 6;
 })
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+.AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddControllersWithViews();
-
-// Performance: Response compression for CSV/ICS/JSON/HTML
-builder.Services.AddResponseCompression(opts =>
-{
-    opts.EnableForHttps = true;
-    opts.Providers.Add<GzipCompressionProvider>();
-});
-
-// Configure Settings
+// Configure email settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.Configure<CompanySettings>(builder.Configuration.GetSection("CompanySettings"));
 
-// Register Services
-builder.Services.AddScoped<INotificationService, NotificationService>();
+// Register services
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICalculationService, CalculationService>();
 builder.Services.AddScoped<IRecurringBookingService, RecurringBookingService>();
+
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseMigrationsEndPoint();
 }
 else
 {
@@ -56,8 +71,6 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseResponseCompression();
-
 app.UseRouting();
 
 app.UseAuthentication();
@@ -65,60 +78,28 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
-// Seed data
+// Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var emailService = services.GetRequiredService<IEmailService>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     
     try
     {
-        logger.LogInformation("Starting application data seeding...");
+        // Apply migrations
+        context.Database.Migrate();
         
-        // Identity data seeding first
-        logger.LogInformation("Running identity data seeder...");
-        var identitySeederLogger = services.GetRequiredService<ILogger<IdentityDataSeeder>>();
-        var identitySeeder = new IdentityDataSeeder(context, userManager, identitySeederLogger);
-        await identitySeeder.SeedAsync();
-        logger.LogInformation("Identity data seeding completed.");
-        
-        // Enhanced data seeding (resources and bookings)
-        logger.LogInformation("Running enhanced data seeder...");
-        var dataSeederLogger = services.GetRequiredService<ILogger<DataSeeder>>();
-        var dataSeeder = new DataSeeder(context, dataSeederLogger);
-        await dataSeeder.SeedAsync();
-        logger.LogInformation("Enhanced data seeding completed.");
-        
-        // Send welcome emails to newly created users
-        logger.LogInformation("Checking for users who need welcome emails...");
-        var usersNeedingWelcome = await userManager.Users
-            .Where(u => u.EmailConfirmed) // Only send to confirmed users
-            .ToListAsync();
-            
-        foreach (var user in usersNeedingWelcome)
-        {
-            try
-            {
-                await emailService.SendWelcomeEmailAsync(user);
-                logger.LogInformation("Welcome email sent to {Email}", user.Email);
-            }
-            catch (Exception emailEx)
-            {
-                logger.LogWarning(emailEx, "Failed to send welcome email to {Email}", user.Email);
-            }
-        }
-        
-        logger.LogInformation("Application startup seeding completed successfully!");
+        // Seed data
+        await DataSeeder.SeedAsync(context);
+        await IdentityDataSeeder.SeedUsersAsync(userManager);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
     }
 }
 
