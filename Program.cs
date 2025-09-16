@@ -4,7 +4,7 @@ using ResourceBooking.Data;
 using ResourceBooking.Models;
 using ResourceBooking.Services;
 using Microsoft.AspNetCore.HttpOverrides;
-using Npgsql.EntityFrameworkCore.PostgreSQL; // for UseNpgsql
+using Npgsql.EntityFrameworkCore.PostgreSQL; // for UseNpgsql and IsNpgsql()
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,12 +26,10 @@ var databaseUrl = GetEnv("DATABASE_URL"); // optional postgres URL
 
 if (!string.IsNullOrEmpty(envNeonConn))
 {
-    // Render/Neon: use env var straight
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(envNeonConn));
 }
 else if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Parse DATABASE_URL (postgres://user:pass@host:port/db)
     var uri = new Uri(databaseUrl);
     var userInfo = uri.UserInfo.Split(':');
     var pgConn = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
@@ -39,14 +37,13 @@ else if (!string.IsNullOrEmpty(databaseUrl))
 }
 else if (!string.IsNullOrEmpty(configConn) && configConn.Contains("Host=", StringComparison.OrdinalIgnoreCase))
 {
-    // appsettings contains a Postgres connection string
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(configConn));
 }
 else
 {
     // Fallback: SQL Server for local development
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(configConn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
+        configConn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
 }
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
@@ -114,7 +111,15 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        context.Database.Migrate();
+        // For Neon/PostgreSQL use EnsureCreated for a clean first deploy, since existing migrations target SQL Server.
+        if (context.Database.IsNpgsql())
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+        }
 
         // Seed identity users first
         var identityLogger = services.GetRequiredService<ILogger<IdentityDataSeeder>>();
@@ -128,7 +133,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        logger.LogError(ex, "An error occurred while initializing the database.");
     }
 }
 
