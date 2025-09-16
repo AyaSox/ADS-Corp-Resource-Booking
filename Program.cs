@@ -4,35 +4,49 @@ using ResourceBooking.Data;
 using ResourceBooking.Models;
 using ResourceBooking.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Npgsql.EntityFrameworkCore.PostgreSQL; // for UseNpgsql
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database configuration - support both SQL Server and PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-
-if (!string.IsNullOrEmpty(databaseUrl))
+// Helper to read connection string from multiple env keys
+static string? GetEnv(params string[] keys)
 {
-    // Render PostgreSQL - parse DATABASE_URL format: postgres://user:password@host:port/database
-    var databaseUri = new Uri(databaseUrl);
-    var userInfo = databaseUri.UserInfo.Split(':');
-    
-    var npgsqlConnectionString = $"Host={databaseUri.Host};" +
-                               $"Port={databaseUri.Port};" +
-                               $"Database={databaseUri.LocalPath.TrimStart('/')};" +
-                               $"Username={userInfo[0]};" +
-                               $"Password={userInfo[1]};" +
-                               $"SSL Mode=Require;" +
-                               $"Trust Server Certificate=true";
-    
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(npgsqlConnectionString));
+    foreach (var k in keys)
+    {
+        var v = Environment.GetEnvironmentVariable(k);
+        if (!string.IsNullOrWhiteSpace(v)) return v;
+    }
+    return null;
+}
+
+// Database configuration - prefer Neon/PostgreSQL when provided
+var configConn = builder.Configuration.GetConnectionString("DefaultConnection");
+var envNeonConn = GetEnv("DefaultConnection", "ConnectionStrings__DefaultConnection");
+var databaseUrl = GetEnv("DATABASE_URL"); // optional postgres URL
+
+if (!string.IsNullOrEmpty(envNeonConn))
+{
+    // Render/Neon: use env var straight
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(envNeonConn));
+}
+else if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Parse DATABASE_URL (postgres://user:pass@host:port/db)
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    var pgConn = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(pgConn));
+}
+else if (!string.IsNullOrEmpty(configConn) && configConn.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+{
+    // appsettings contains a Postgres connection string
+    builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(configConn));
 }
 else
 {
-    // Local development - SQL Server
+    // Fallback: SQL Server for local development
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+        options.UseSqlServer(configConn ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
 }
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
