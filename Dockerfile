@@ -3,12 +3,12 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore as distinct layers for better caching
-COPY ResourceBooking/ResourceBooking.csproj ResourceBooking/
-RUN dotnet restore ResourceBooking/ResourceBooking.csproj
+COPY *.csproj ./
+RUN dotnet restore ResourceBooking.csproj
 
 # Copy everything and publish
 COPY . .
-RUN dotnet publish ResourceBooking/ResourceBooking.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish ResourceBooking.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
