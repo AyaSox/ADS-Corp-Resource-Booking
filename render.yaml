@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: ads-corp-resource-booking
+    env: docker
+    plan: free
+    autoDeploy: true
+    region: frankfurt
+    
+    build:
+      dockerfilePath: ./ResourceBooking/Dockerfile
+      context: .
+
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: 8080
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # set in Render dashboard
+      - key: EmailSettings__SmtpServer
+        sync: false
+      - key: EmailSettings__SmtpPort
+        sync: false
+      - key: EmailSettings__Username
+        sync: false
+      - key: EmailSettings__Password
+        sync: false
+      - key: EmailSettings__From
+        sync: false
