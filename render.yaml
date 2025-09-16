@@ -23,12 +23,8 @@ services:
         sync: false
       - key: EmailSettings__From
         sync: false
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./ResourceBooking/Dockerfile
     buildFilter:
       paths:
-        - **/*.cs
-        - **/*.csproj
-        - **/*.cshtml
-        - **/*.json
-        - Dockerfile
+        - ResourceBooking/**
         - render.yaml
