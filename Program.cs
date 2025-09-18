@@ -7,33 +7,17 @@ using ResourceBooking.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Resolve connection string with environment overrides
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var envOverride = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrWhiteSpace(envOverride)) connectionString = envOverride;
-else if (!string.IsNullOrWhiteSpace(databaseUrl) && databaseUrl.Contains("@"))
-{
-    connectionString = ConvertDatabaseUrl(databaseUrl);
-}
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Database connection string not found.");
+// Add services to the container.
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-bool isPostgres = IsPostgres(connectionString);
-
-if (isPostgres)
-{
-    builder.Services.AddDbContext<ApplicationDbContext>(o => 
-        o.UseNpgsql(connectionString, npgsqlOptions => 
-            npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", ApplicationDbContext.Schema)));
-}
-else
-{
-    builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlServer(connectionString));
-}
+// Use SQLite
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// Configure Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -47,6 +31,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
+// Register application services
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICalculationService, CalculationService>();
@@ -68,44 +53,37 @@ builder.Services.AddLogging(logging =>
 
 var app = builder.Build();
 
+// CRITICAL: Initialize and seed database
 using (var scope = app.Services.CreateScope())
 {
-    var sp = scope.ServiceProvider;
-    var logger = sp.GetRequiredService<ILogger<Program>>();
-    var ctx = sp.GetRequiredService<ApplicationDbContext>();
-    logger.LogInformation("Starting DB init. Provider={Provider} Postgres={IsPg}", ctx.Database.ProviderName, isPostgres);
-
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
-        if (isPostgres)
-        {
-            // Ensure the schema exists
-            await ctx.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS \"{ApplicationDbContext.Schema}\"");
-        }
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        
+        logger.LogInformation("Applying database migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully.");
 
-        await ctx.Database.MigrateAsync();
-        logger.LogInformation("Migrations applied successfully.");
-
-        // Only attempt seeding if core tables exist (quick existence probe)
-        if (await CoreTablesExistAsync(ctx, logger))
-        {
-            var identitySeeder = sp.GetRequiredService<IdentityDataSeeder>();
-            await identitySeeder.SeedAsync();
-            var dataSeeder = sp.GetRequiredService<DataSeeder>();
-            await dataSeeder.SeedAsync();
-        }
-        else
-        {
-            logger.LogWarning("Skipping seeding. Core tables missing (likely insufficient privileges). Setup DB manually.");
-        }
+        // Seed data
+        var identitySeeder = services.GetRequiredService<IdentityDataSeeder>();
+        await identitySeeder.SeedAsync();
+        
+        var dataSeeder = services.GetRequiredService<DataSeeder>();
+        await dataSeeder.SeedAsync();
+        
+        logger.LogInformation("Database initialization and seeding completed successfully!");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "DB initialization failed – application start aborted.");
+        logger.LogError(ex, "An error occurred during database initialization.");
         throw;
     }
 }
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -124,44 +102,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
-app.Run();
 
-static bool IsPostgres(string conn) => conn.Contains("Host=") || conn.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) || conn.Contains("Username=");
-static string ConvertDatabaseUrl(string url)
-{
-    try
-    {
-        var uri = new Uri(url);
-        var parts = uri.UserInfo.Split(':');
-        var user = Uri.UnescapeDataString(parts[0]);
-        var pass = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
-        var db = uri.AbsolutePath.Trim('/');
-        var host = uri.Host;
-        var port = uri.Port > 0 ? uri.Port : 5432;
-        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
-    }
-    catch { return url; }
-}
-static async Task<bool> CoreTablesExistAsync(ApplicationDbContext ctx, ILogger logger)
-{
-    try
-    {
-        var canQuery = await ctx.Database.CanConnectAsync();
-        if (!canQuery) return false;
-        
-        // For PostgreSQL - just try simple query
-        try {
-            var count = await ctx.Resources.CountAsync();
-            logger.LogInformation("Database already contains {count} resources", count);
-            return true;
-        } 
-        catch {
-            return false;
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogWarning(ex, "Core table probe failed.");
-        return false;
-    }
-}
+app.Run();

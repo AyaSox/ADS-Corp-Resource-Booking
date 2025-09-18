@@ -12,6 +12,7 @@
     <!-- Align all EF Core packages to the same 8.0.x patch version -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
       <PrivateAssets>all</PrivateAssets>
