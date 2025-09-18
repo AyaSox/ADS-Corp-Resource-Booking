@@ -55,7 +55,7 @@ namespace ResourceBooking.Controllers
                     {
                         ResourceId = g.Key,
                         BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(b => EF.Functions.DateDiffMinute(b.StartTime, b.EndTime))
+                        TotalMinutes = g.Sum(b => (b.EndTime - b.StartTime).TotalMinutes)
                     })
                     .OrderByDescending(x => x.BookingCount)
                     .ToListAsync();
@@ -106,7 +106,7 @@ namespace ResourceBooking.Controllers
                     {
                         UserId = g.Key,
                         BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(b => EF.Functions.DateDiffMinute(b.StartTime, b.EndTime))
+                        TotalMinutes = g.Sum(b => (b.EndTime - b.StartTime).TotalMinutes)
                     })
                     .OrderByDescending(x => x.BookingCount)
                     .Take(10)
