@@ -26,7 +26,6 @@ namespace ResourceBooking.Controllers
             try
             {
                 _logger.LogInformation("=== REPORTS CONTROLLER - Starting Data Collection ===");
-                
                 var today = DateTime.Today;
                 var endOfToday = today.AddDays(1);
                 var startOfMonth = new DateTime(today.Year, today.Month, 1);
@@ -43,22 +42,24 @@ namespace ResourceBooking.Controllers
                     .Where(b => !b.Cancelled && b.StartTime >= startOfLastMonth && b.StartTime < startOfMonth)
                     .CountAsync();
 
-                // Base query for this-month active bookings
-                var monthBookingsQuery = _db.Bookings
+                // Pull raw booking rows once, then aggregate in-memory to avoid provider translation issues (SQLite limitation)
+                var monthBookingsRaw = await _db.Bookings
                     .AsNoTracking()
-                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday);
+                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday)
+                    .Select(b => new { b.ResourceId, b.UserId, b.StartTime, b.EndTime })
+                    .ToListAsync();
 
-                // Popular resources aggregates
-                var resourceAgg = await monthBookingsQuery
+                // Resource aggregates (in memory)
+                var resourceAgg = monthBookingsRaw
                     .GroupBy(b => b.ResourceId)
                     .Select(g => new
                     {
                         ResourceId = g.Key,
                         BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(b => (b.EndTime - b.StartTime).TotalMinutes)
+                        TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes)
                     })
                     .OrderByDescending(x => x.BookingCount)
-                    .ToListAsync();
+                    .ToList();
 
                 var resourceIds = resourceAgg.Select(x => x.ResourceId).ToList();
                 var resourceNames = await _db.Resources
@@ -66,11 +67,9 @@ namespace ResourceBooking.Controllers
                     .ToDictionaryAsync(r => r.Id, r => r.Name);
 
                 var businessHoursThisPeriod = CalculateBusinessHours(startOfMonth, endOfToday);
-
-                // Compute max values to normalize
                 var maxBookings = resourceAgg.Any() ? resourceAgg.Max(x => x.BookingCount) : 0;
                 var maxHours = resourceAgg.Any() ? resourceAgg.Max(x => x.TotalMinutes) / 60.0 : 0.0;
-                const double wBookings = 0.6; // weights keep it simple
+                const double wBookings = 0.6;
                 const double wHours = 0.4;
 
                 var popularResources = resourceAgg
@@ -78,12 +77,10 @@ namespace ResourceBooking.Controllers
                     {
                         var hours = x.TotalMinutes / 60.0;
                         var utilizationPct = businessHoursThisPeriod > 0 ? Math.Round((hours / businessHoursThisPeriod) * 100, 2) : 0;
-                        // Simple normalized score 0..1
                         var scoreBookings = maxBookings > 0 ? (double)x.BookingCount / maxBookings : 0;
                         var scoreHours = maxHours > 0 ? hours / maxHours : 0;
                         var score = (scoreBookings * wBookings) + (scoreHours * wHours);
-                        var stars = Math.Round(score * 5, 1); // 0..5
-
+                        var stars = Math.Round(score * 5, 1);
                         return new ResourcePopularityStats
                         {
                             ResourceName = resourceNames.TryGetValue(x.ResourceId, out var name) ? name : $"Resource #{x.ResourceId}",
@@ -99,20 +96,20 @@ namespace ResourceBooking.Controllers
 
                 _logger.LogInformation("Popular resources computed: {Count}", popularResources.Count);
 
-                // User activity
-                var userAgg = await monthBookingsQuery
+                // User aggregates (in memory)
+                var userAgg = monthBookingsRaw
                     .GroupBy(b => b.UserId)
                     .Select(g => new
                     {
                         UserId = g.Key,
                         BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(b => (b.EndTime - b.StartTime).TotalMinutes)
+                        TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes)
                     })
                     .OrderByDescending(x => x.BookingCount)
                     .Take(10)
-                    .ToListAsync();
+                    .ToList();
 
-                var userIds = userAgg.Select(x => x.UserId).ToList();
+                var userIds = userAgg.Select(x => x.UserId).Where(id => id != null).ToList();
                 var userNames = await _db.Users
                     .Where(u => userIds.Contains(u.Id))
                     .ToDictionaryAsync(u => u.Id, u => ($"{u.FirstName} {u.LastName}").Trim());
@@ -120,7 +117,7 @@ namespace ResourceBooking.Controllers
                 var userActivity = userAgg
                     .Select(x => new UserActivityReport
                     {
-                        UserName = userNames.TryGetValue(x.UserId!, out var n) ? n : "Unknown",
+                        UserName = x.UserId != null && userNames.TryGetValue(x.UserId, out var n) ? n : "Unknown",
                         BookingCount = x.BookingCount,
                         TotalHours = Math.Round(x.TotalMinutes / 60.0, 2)
                     })
@@ -140,52 +137,35 @@ namespace ResourceBooking.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating reports: {Message} | StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                TempData["ErrorMessage"] = $"Unable to load reports data: {ex.Message}";
+                _logger.LogError(ex, "Error generating reports: {Message}", ex.Message);
+                TempData["ErrorMessage"] = "Unable to load reports data. Please try again.";
 
-                // Create a basic fallback model with whatever data we can safely get
                 var debugModel = new ReportsViewModel
                 {
                     DashboardStats = new DashboardStats
                     {
-                        TotalResources = 0,
-                        AvailableResources = 0, 
-                        UnavailableResources = 0,
-                        TotalBookingsThisMonth = 0,
-                        AverageUtilizationPercentage = 0,
-                        ActiveUsers = 0
+                        TotalResources = await _db.Resources.CountAsync(),
+                        AvailableResources = await _db.Resources.CountAsync(r => r.IsAvailable),
+                        UnavailableResources = await _db.Resources.CountAsync(r => !r.IsAvailable),
+                        TotalBookingsThisMonth = await _db.Bookings.CountAsync()
                     },
                     PopularResources = new List<ResourcePopularityStats>(),
-                    ThisMonthBookings = 0,
+                    ThisMonthBookings = await _db.Bookings.CountAsync(),
                     LastMonthBookings = 0,
                     UserActivity = new List<UserActivityReport>(),
                     ReportDate = DateTime.Today
                 };
 
-                // Try to get basic counts without complex queries
-                try
-                {
-                    debugModel.DashboardStats.TotalResources = await _db.Resources.CountAsync();
-                    debugModel.DashboardStats.AvailableResources = await _db.Resources.CountAsync(r => r.IsAvailable);
-                    debugModel.DashboardStats.UnavailableResources = await _db.Resources.CountAsync(r => !r.IsAvailable);
-                    debugModel.DashboardStats.TotalBookingsThisMonth = await _db.Bookings.CountAsync(b => !b.Cancelled);
-                }
-                catch (Exception dbEx)
-                {
-                    _logger.LogError(dbEx, "Error getting basic database counts: {Message}", dbEx.Message);
-                }
-
                 return View(debugModel);
             }
         }
 
-        // Local helper replicating business-hours calc in CalculationService
         private static double CalculateBusinessHours(DateTime startDate, DateTime endDate)
         {
-            const int startHour = 8;   // 8 AM
-            const int endHour = 18;    // 6 PM
-            const int hoursPerDay = endHour - startHour; // 10
-            var businessDays = new HashSet<int> { 1, 2, 3, 4, 5 }; // Mon-Fri
+            const int startHour = 8;
+            const int endHour = 18;
+            const int hoursPerDay = endHour - startHour;
+            var businessDays = new HashSet<int> { 1, 2, 3, 4, 5 };
 
             double total = 0;
             var current = startDate.Date;
@@ -193,9 +173,7 @@ namespace ResourceBooking.Controllers
             while (current < last)
             {
                 if (businessDays.Contains((int)current.DayOfWeek))
-                {
                     total += hoursPerDay;
-                }
                 current = current.AddDays(1);
             }
             return total;
@@ -210,15 +188,7 @@ namespace ResourceBooking.Controllers
         public int LastMonthBookings { get; set; }
         public List<UserActivityReport> UserActivity { get; set; } = new();
         public DateTime ReportDate { get; set; }
-
-        public double MonthlyGrowthPercentage
-        {
-            get
-            {
-                if (LastMonthBookings == 0) return ThisMonthBookings > 0 ? 100 : 0;
-                return Math.Round(((double)(ThisMonthBookings - LastMonthBookings) / LastMonthBookings) * 100, 1);
-            }
-        }
+        public double MonthlyGrowthPercentage => LastMonthBookings == 0 ? (ThisMonthBookings > 0 ? 100 : 0) : Math.Round(((double)(ThisMonthBookings - LastMonthBookings) / LastMonthBookings) * 100, 1);
     }
 
     public class UserActivityReport
