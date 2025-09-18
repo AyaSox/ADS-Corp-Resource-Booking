@@ -23,7 +23,9 @@ bool isPostgres = IsPostgres(connectionString);
 
 if (isPostgres)
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(connectionString));
+    builder.Services.AddDbContext<ApplicationDbContext>(o => 
+        o.UseNpgsql(connectionString, npgsqlOptions => 
+            npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", ApplicationDbContext.Schema)));
 }
 else
 {
@@ -77,32 +79,12 @@ using (var scope = app.Services.CreateScope())
     {
         if (isPostgres)
         {
-            // Try migrations (preferred if permissions allow)
-            try
-            {
-                await ctx.Database.MigrateAsync();
-                logger.LogInformation("Migrations applied (PostgreSQL)");
-            }
-            catch (Exception migEx)
-            {
-                logger.LogWarning(migEx, "PostgreSQL migrations failed. Attempting EnsureCreated as fallback (may lack Identity tables later).");
-                try
-                {
-                    var created = await ctx.Database.EnsureCreatedAsync();
-                    logger.LogInformation(created ? "Database created via EnsureCreated (PostgreSQL)" : "Database already exists (EnsureCreated check)");
-                }
-                catch (Exception ensureEx)
-                {
-                    logger.LogError(ensureEx, "EnsureCreated also failed. Database cannot be initialized.");
-                    throw; // hard fail – can't proceed
-                }
-            }
+            // Ensure the schema exists
+            await ctx.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS \"{ApplicationDbContext.Schema}\"");
         }
-        else
-        {
-            await ctx.Database.MigrateAsync();
-            logger.LogInformation("Migrations applied (SQL Server)");
-        }
+
+        await ctx.Database.MigrateAsync();
+        logger.LogInformation("Migrations applied successfully.");
 
         // Only attempt seeding if core tables exist (quick existence probe)
         if (await CoreTablesExistAsync(ctx, logger))

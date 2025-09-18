@@ -6,6 +6,8 @@ namespace ResourceBooking.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        public static readonly string Schema = "booking";
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
@@ -18,6 +20,7 @@ namespace ResourceBooking.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.HasDefaultSchema(Schema);
 
             // Configure Resource entity
             builder.Entity<Resource>(entity =>
