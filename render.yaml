@@ -1,7 +1,7 @@
 services:
   - type: web
     name: resource-booking
-    env: dotnet
+    runtime: dotnet
     plan: free
     buildCommand: dotnet publish -c Release -o /app/publish
     startCommand: dotnet ResourceBooking.dll
@@ -12,10 +12,7 @@ services:
       - key: ConnectionStrings__DefaultConnection
         value: "Data Source=/data/ResourceBooking.db"
 
-databases:
-  - name: sqlite-data
-    plan: free
-    disk:
-      name: sqlite-disk
-      mountPath: /data
-      sizeGB: 1
+disks:
+  - name: sqlite-disk
+    mountPath: /data
+    sizeGB: 1
