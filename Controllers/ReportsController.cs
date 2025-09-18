@@ -67,7 +67,12 @@ namespace ResourceBooking.Controllers
 
                 bool isCustom = quickRange == "custom";
 
-                _logger.LogInformation("Reports range resolved. QuickRange={Quick} Start={Start} EndExclusive={End}", quickRange, rangeStart, rangeEndExclusive);
+                // Previous period for comparisons (same length)
+                var periodLengthDays = (int)(rangeEndExclusive - rangeStart).TotalDays;
+                var prevStart = rangeStart.AddDays(-periodLengthDays);
+                var prevEndExclusive = rangeStart;
+
+                _logger.LogInformation("Reports range resolved QuickRange={Quick} Start={Start} End={End} PrevStart={PrevStart} PrevEnd={PrevEnd}", quickRange, rangeStart, rangeEndExclusive, prevStart, prevEndExclusive);
 
                 var dashboardStats = await _calculationService.GetDashboardStatsAsync() ?? new DashboardStats();
 
@@ -91,19 +96,28 @@ namespace ResourceBooking.Controllers
                     .Select(b => new { b.ResourceId, b.UserId, b.StartTime, b.EndTime })
                     .ToListAsync();
 
-                // Resource aggregates
+                // Previous period raw (for deltas)
+                var prevBookingsRaw = await _db.Bookings
+                    .AsNoTracking()
+                    .Where(b => !b.Cancelled && b.StartTime >= prevStart && b.StartTime < prevEndExclusive)
+                    .Select(b => new { b.ResourceId, b.UserId, b.StartTime, b.EndTime })
+                    .ToListAsync();
+
+                // Resource aggregates current
                 var resourceAgg = rangeBookingsRaw
                     .GroupBy(b => b.ResourceId)
-                    .Select(g => new
-                    {
-                        ResourceId = g.Key,
-                        BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes)
-                    })
+                    .Select(g => new { ResourceId = g.Key, BookingCount = g.Count(), TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes) })
                     .OrderByDescending(x => x.BookingCount)
                     .ToList();
 
-                var resourceIds = resourceAgg.Select(x => x.ResourceId).ToList();
+                // Resource aggregates previous
+                var prevResourceAgg = prevBookingsRaw
+                    .GroupBy(b => b.ResourceId)
+                    .Select(g => new { ResourceId = g.Key, BookingCount = g.Count() })
+                    .ToList();
+                var prevResourceDict = prevResourceAgg.ToDictionary(x => x.ResourceId, x => x.BookingCount);
+
+                var resourceIds = resourceAgg.Select(x => x.ResourceId).Concat(prevResourceAgg.Select(p => p.ResourceId)).Distinct().ToList();
                 var resourceNames = await _db.Resources
                     .Where(r => resourceIds.Contains(r.Id))
                     .ToDictionaryAsync(r => r.Id, r => r.Name);
@@ -136,15 +150,18 @@ namespace ResourceBooking.Controllers
                     .ThenByDescending(s => s.BookingCount)
                     .ToList();
 
+                // Previous bookings dict keyed by resource name for view comparison
+                var previousResourceBookings = new Dictionary<string, int>();
+                foreach (var res in prevResourceAgg)
+                {
+                    var name = resourceNames.TryGetValue(res.ResourceId, out var n) ? n : $"Resource #{res.ResourceId}";
+                    previousResourceBookings[name] = res.BookingCount;
+                }
+
                 // User aggregates
                 var userAgg = rangeBookingsRaw
                     .GroupBy(b => b.UserId)
-                    .Select(g => new
-                    {
-                        UserId = g.Key,
-                        BookingCount = g.Count(),
-                        TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes)
-                    })
+                    .Select(g => new { UserId = g.Key, BookingCount = g.Count(), TotalMinutes = g.Sum(x => (x.EndTime - x.StartTime).TotalMinutes) })
                     .OrderByDescending(x => x.BookingCount)
                     .Take(10)
                     .ToList();
@@ -163,6 +180,25 @@ namespace ResourceBooking.Controllers
                     })
                     .ToList();
 
+                // Trend data (daily counts for selected range, cap 90 days)
+                var trendPoints = new List<int>();
+                var trendLabels = new List<string>();
+                var groupedDaily = rangeBookingsRaw.GroupBy(b => b.StartTime.Date).ToDictionary(g => g.Key, g => g.Count());
+                var iterDate = rangeStart.Date;
+                int maxTrendDays = Math.Min(periodLengthDays, 90);
+                int dayCounter = 0;
+                while (iterDate < rangeEndExclusive && dayCounter < maxTrendDays)
+                {
+                    trendPoints.Add(groupedDaily.TryGetValue(iterDate, out var c) ? c : 0);
+                    trendLabels.Add(iterDate.ToString("MM-dd"));
+                    iterDate = iterDate.AddDays(1);
+                    dayCounter++;
+                }
+
+                var currentPeriodTotal = rangeBookingsRaw.Count;
+                var previousPeriodTotal = prevBookingsRaw.Count;
+                double periodDeltaPct = previousPeriodTotal == 0 ? (currentPeriodTotal > 0 ? 100 : 0) : Math.Round(((double)(currentPeriodTotal - previousPeriodTotal) / previousPeriodTotal) * 100, 1);
+
                 var model = new ReportsViewModel
                 {
                     DashboardStats = dashboardStats,
@@ -174,7 +210,13 @@ namespace ResourceBooking.Controllers
                     SelectedQuickRange = quickRange,
                     RangeStart = rangeStart,
                     RangeEnd = rangeEndExclusive.AddDays(-1), // inclusive end for display
-                    IsCustom = isCustom
+                    IsCustom = isCustom,
+                    PreviousResourceBookings = previousResourceBookings,
+                    TrendPoints = trendPoints,
+                    TrendLabels = trendLabels,
+                    CurrentRangeTotal = currentPeriodTotal,
+                    PreviousRangeTotal = previousPeriodTotal,
+                    RangeDeltaPercent = periodDeltaPct
                 };
 
                 return View(model);
@@ -239,6 +281,14 @@ namespace ResourceBooking.Controllers
             "custom" => $"Custom: {RangeStart:dd MMM yyyy} - {RangeEnd:dd MMM yyyy}",
             _ => "This Month"
         };
+
+        // New additions
+        public Dictionary<string, int> PreviousResourceBookings { get; set; } = new();
+        public List<int> TrendPoints { get; set; } = new();
+        public List<string> TrendLabels { get; set; } = new();
+        public int CurrentRangeTotal { get; set; }
+        public int PreviousRangeTotal { get; set; }
+        public double RangeDeltaPercent { get; set; }
     }
 
     public class UserActivityReport
