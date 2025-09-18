@@ -93,40 +93,72 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 
-// Seed database with initial data
+// Enhanced database initialization for production
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-
-        // Ensure database is created and apply pending migrations
-        await context.Database.MigrateAsync();
-        logger.LogInformation("Database migrations applied successfully.");
+        
+        logger.LogInformation("Starting database initialization...");
+        
+        // Check if we're using PostgreSQL (production)
+        bool isPostgreSQL = context.Database.ProviderName?.Contains("Npgsql") ?? false;
+        
+        if (isPostgreSQL)
+        {
+            logger.LogInformation("PostgreSQL detected - using EnsureCreated for fresh database setup");
+            
+            // For PostgreSQL (production), use EnsureCreated to avoid migration conflicts
+            var created = await context.Database.EnsureCreatedAsync();
+            if (created)
+            {
+                logger.LogInformation("? Database created successfully using EnsureCreated");
+            }
+            else
+            {
+                logger.LogInformation("Database already exists");
+            }
+        }
+        else
+        {
+            logger.LogInformation("SQL Server detected - using migrations");
+            
+            // For SQL Server (development), use migrations
+            await context.Database.MigrateAsync();
+            logger.LogInformation("? Database migrations applied successfully");
+        }
 
         // Seed identity data (users and roles)
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        
         var identitySeeder = services.GetRequiredService<IdentityDataSeeder>();
         await identitySeeder.SeedAsync();
-        logger.LogInformation("Identity data seeded successfully.");
+        logger.LogInformation("? Identity data seeded successfully");
 
         // Seed application data (resources, sample bookings)
         var dataSeeder = services.GetRequiredService<DataSeeder>();
         await dataSeeder.SeedAsync();
-        logger.LogInformation("Application data seeded successfully.");
+        logger.LogInformation("? Application data seeded successfully");
+        
+        logger.LogInformation("?? Database initialization completed successfully!");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "? An error occurred during database initialization");
         
-        // In production, you might want to continue running even if seeding fails
+        // In production, log the error but continue - let the app start
         if (app.Environment.IsDevelopment())
         {
             throw;
+        }
+        else
+        {
+            logger.LogWarning("?? Continuing application startup despite database initialization error");
         }
     }
 }
