@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore;
 using ResourceBooking.Data;
 using ResourceBooking.Models;
 using ResourceBooking.Services;
@@ -11,7 +12,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 // Configure Entity Framework with database provider detection
-if (connectionString.Contains("Host=") && connectionString.Contains("neondb"))
+if (connectionString.Contains("Host=") && connectionString.Contains("postgres"))
 {
     // PostgreSQL (Neon) configuration for production
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
