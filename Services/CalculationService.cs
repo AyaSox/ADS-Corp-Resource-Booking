@@ -206,8 +206,8 @@ namespace ResourceBooking.Services
                     }).ToList(),
                     TodayBookings = todayBookings.Select(b => new TodayBookingInfo
                     {
-                        ResourceName = b.Resource.Name,
-                        UserName = b.User.FullName,
+                        ResourceName = b.Resource?.Name ?? "Unknown Resource",
+                        UserName = b.User?.FullName ?? "Unknown User",
                         Purpose = b.Purpose,
                         StartTime = b.LocalStartTime,
                         EndTime = b.LocalEndTime,

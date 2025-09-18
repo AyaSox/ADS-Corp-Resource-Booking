@@ -140,24 +140,40 @@ namespace ResourceBooking.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating reports: {Message}", ex.Message);
-                TempData["ErrorMessage"] = "Unable to load reports data. Please try again.";
+                _logger.LogError(ex, "Error generating reports: {Message} | StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                TempData["ErrorMessage"] = $"Unable to load reports data: {ex.Message}";
 
+                // Create a basic fallback model with whatever data we can safely get
                 var debugModel = new ReportsViewModel
                 {
                     DashboardStats = new DashboardStats
                     {
-                        TotalResources = await _db.Resources.CountAsync(),
-                        AvailableResources = await _db.Resources.CountAsync(r => r.IsAvailable),
-                        UnavailableResources = await _db.Resources.CountAsync(r => !r.IsAvailable),
-                        TotalBookingsThisMonth = await _db.Bookings.CountAsync()
+                        TotalResources = 0,
+                        AvailableResources = 0, 
+                        UnavailableResources = 0,
+                        TotalBookingsThisMonth = 0,
+                        AverageUtilizationPercentage = 0,
+                        ActiveUsers = 0
                     },
                     PopularResources = new List<ResourcePopularityStats>(),
-                    ThisMonthBookings = await _db.Bookings.CountAsync(),
+                    ThisMonthBookings = 0,
                     LastMonthBookings = 0,
                     UserActivity = new List<UserActivityReport>(),
                     ReportDate = DateTime.Today
                 };
+
+                // Try to get basic counts without complex queries
+                try
+                {
+                    debugModel.DashboardStats.TotalResources = await _db.Resources.CountAsync();
+                    debugModel.DashboardStats.AvailableResources = await _db.Resources.CountAsync(r => r.IsAvailable);
+                    debugModel.DashboardStats.UnavailableResources = await _db.Resources.CountAsync(r => !r.IsAvailable);
+                    debugModel.DashboardStats.TotalBookingsThisMonth = await _db.Bookings.CountAsync(b => !b.Cancelled);
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.LogError(dbEx, "Error getting basic database counts: {Message}", dbEx.Message);
+                }
 
                 return View(debugModel);
             }
