@@ -71,12 +71,13 @@ namespace ResourceBooking.Controllers
                 // Get popular resources this month
                 _logger.LogInformation("Fetching popular resources...");
                 var startOfMonth = new DateTime(today.Year, today.Month, 1);
+                var endOfMonth = startOfMonth.AddMonths(1); // exclusive upper bound
                 var popularResources = await _calculationService.GetResourcePopularityStatsAsync(startOfMonth, today.AddDays(1));
                 viewModel.PopularResources = popularResources.Take(5).ToList();
 
-                // Get user stats for this month
-                _logger.LogInformation("Fetching user statistics...");
-                var userStats = await _calculationService.GetUserBookingStatsAsync(userId, startOfMonth, today.AddDays(1));
+                // Get user stats for this month (full month window so cancellations of future bookings count)
+                _logger.LogInformation("Fetching user statistics (month-wide)...");
+                var userStats = await _calculationService.GetUserBookingStatsAsync(userId, startOfMonth, endOfMonth);
                 viewModel.UserStats = userStats;
 
                 _logger.LogInformation("Dashboard data loaded successfully. Resources: {ResourceCount}, Today's Bookings: {TodayBookings}", 
