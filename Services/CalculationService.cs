@@ -73,7 +73,7 @@ namespace ResourceBooking.Services
                     .Include(b => b.Resource)
                     .Where(b => b.UserId == userId && 
                                b.StartTime >= startDate && 
-                               b.EndTime <= endDate)
+                               b.StartTime < endDate) // use StartTime boundary only so future cancelled bookings in range are counted
                     .ToListAsync();
 
                 var cancelledBookings = bookings.Where(b => b.Cancelled).ToList();
