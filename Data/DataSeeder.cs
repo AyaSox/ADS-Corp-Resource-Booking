@@ -22,9 +22,7 @@ namespace ResourceBooking.Data
         {
             try
             {
-                // Ensure database exists
-                _db.Database.EnsureCreated();
-                
+                // Database should already be created by Program.cs
                 _logger.LogInformation("Starting data seeding...");
 
                 // Check if Resources table exists and has data
@@ -200,6 +198,7 @@ namespace ResourceBooking.Data
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during data seeding: {Message}", ex.Message);
+                throw; // Re-throw to let Program.cs handle the failure
             }
         }
 
@@ -209,4 +208,4 @@ namespace ResourceBooking.Data
             SeedAsync().GetAwaiter().GetResult();
         }
     }
-}
+}}

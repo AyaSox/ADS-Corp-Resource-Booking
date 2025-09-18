@@ -288,7 +288,7 @@ namespace ResourceBooking.Migrations
 
                     b.HasIndex("ResourceId", "StartTime", "EndTime", "Cancelled");
 
-                    b.ToTable("Bookings");
+                    b.ToTable("Bookings", (string)null);
                 });
 
             modelBuilder.Entity("ResourceBooking.Models.Notification", b =>
@@ -331,7 +331,7 @@ namespace ResourceBooking.Migrations
 
                     b.HasIndex("UserId", "IsRead", "CreatedAt");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("ResourceBooking.Models.Resource", b =>
@@ -379,7 +379,7 @@ namespace ResourceBooking.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Resources");
+                    b.ToTable("Resources", (string)null);
 
                     b.HasData(
                         new

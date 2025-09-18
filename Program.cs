@@ -66,34 +66,7 @@ builder.Services.AddLogging(logging =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseMigrationsEndPoint();
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios.
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Configure routing
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapRazorPages();
-
-// Enhanced database initialization for production
+// CRITICAL: Initialize database BEFORE configuring the pipeline
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -103,33 +76,35 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         
-        logger.LogInformation("Starting database initialization...");
+        logger.LogInformation("?? Starting database initialization...");
         
-        // Check if we're using PostgreSQL (production)
+        // Check if we're using PostgreSQL
         bool isPostgreSQL = context.Database.ProviderName?.Contains("Npgsql") ?? false;
         
         if (isPostgreSQL)
         {
-            logger.LogInformation("PostgreSQL detected - using EnsureCreated for fresh database setup");
+            logger.LogInformation("?? PostgreSQL detected - creating database structure...");
             
-            // For PostgreSQL (production), use EnsureCreated to avoid migration conflicts
-            var created = await context.Database.EnsureCreatedAsync();
-            if (created)
+            // For PostgreSQL, try migrations first, fall back to EnsureCreated
+            try
             {
-                logger.LogInformation("? Database created successfully using EnsureCreated");
+                await context.Database.MigrateAsync();
+                logger.LogInformation("? Migrations applied successfully");
             }
-            else
+            catch (Exception migrationEx)
             {
-                logger.LogInformation("Database already exists");
+                logger.LogWarning(migrationEx, "?? Migrations failed, trying EnsureCreated...");
+                
+                // If migrations fail, use EnsureCreated for PostgreSQL
+                await context.Database.EnsureCreatedAsync();
+                logger.LogInformation("? Database created using EnsureCreated");
             }
         }
         else
         {
-            logger.LogInformation("SQL Server detected - using migrations");
-            
-            // For SQL Server (development), use migrations
+            logger.LogInformation("?? SQL Server detected - applying migrations...");
             await context.Database.MigrateAsync();
-            logger.LogInformation("? Database migrations applied successfully");
+            logger.LogInformation("? Migrations applied successfully");
         }
 
         // Seed identity data (users and roles)
@@ -149,18 +124,36 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "? An error occurred during database initialization");
-        
-        // In production, log the error but continue - let the app start
-        if (app.Environment.IsDevelopment())
-        {
-            throw;
-        }
-        else
-        {
-            logger.LogWarning("?? Continuing application startup despite database initialization error");
-        }
+        logger.LogError(ex, "? CRITICAL: Database initialization failed!");
+        logger.LogError("?? Application cannot start without database. Exiting...");
+        throw; // Always throw - app cannot work without database
     }
 }
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseMigrationsEndPoint();
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Configure routing
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapRazorPages();
 
 app.Run();
