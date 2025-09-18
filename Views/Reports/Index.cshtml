@@ -53,6 +53,11 @@
             const ctx = document.getElementById('trendSpark');
             new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{data:points,fill:false,borderColor:'#0d6efd',tension:.3,pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`Bookings: ${c.parsed.y}`}}},scales:{x:{display:false},y:{display:false}},elements:{line:{borderCapStyle:'round'}},responsive:true,maintainAspectRatio:false}});
         }
+        // Bootstrap tooltips (requires bootstrap bundle already on layout)
+        document.addEventListener('DOMContentLoaded', () => {
+            const triggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            triggers.forEach(el => new bootstrap.Tooltip(el));
+        });
     </script>
 }
 
@@ -107,14 +112,16 @@
                     {
                         var prev = Model.PreviousResourceBookings.ContainsKey(resource.ResourceName)? Model.PreviousResourceBookings[resource.ResourceName]:0;
                         var delta = prev == 0 ? (resource.BookingCount>0?100:0) : Math.Round(((double)(resource.BookingCount - prev) / prev) * 100,1);
+                        var deltaClass = delta>0?"text-success":(delta<0?"text-danger":"text-muted");
+                        var deltaSign = delta>=0?"+":"";
+                        var tooltip = $"Current: {resource.BookingCount} bookings | Previous: {prev} | Change: {deltaSign}{delta}%";
                         <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom small">
                             <div class="flex-grow-1">
-                                <strong>@resource.ResourceName</strong>
-                                <br />
+                                <strong>@resource.ResourceName</strong><br />
                                 <span class="text-muted">@resource.BookingCount bookings • @resource.TotalHours hrs</span>
                             </div>
-                            <div class="text-end me-3" style="min-width:65px;">
-                                <span class="@(delta>0?"text-success":(delta<0?"text-danger":"text-muted"))" title="Prev: @prev">@(delta>=0?"+":"")@delta%</span>
+                            <div class="text-end me-3" style="min-width:70px;">
+                                <span class="@deltaClass" data-bs-toggle="tooltip" data-bs-title="@tooltip">@deltaSign@delta%</span>
                             </div>
                             <div class="text-end" style="min-width:80px;">
                                 @{ var stars = Math.Min(5, Math.Max(0, (int)Math.Round(resource.PopularityStars))); }
