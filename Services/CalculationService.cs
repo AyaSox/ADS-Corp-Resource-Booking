@@ -171,7 +171,7 @@ namespace ResourceBooking.Services
                         avgUtilization = totalPossibleHours > 0 ? (totalBookedHours / totalPossibleHours) * 100 : 0;
                         
                         _logger.LogInformation("Utilization: {BookedHours}h booked / {PossibleHours}h possible = {Utilization}%", 
-                            Math.Round(totalBookedHours, 1), Math.Round(totalPossibleHours, 1), Math.Round(avgUtilization, 1));
+                            Math.Round((double)totalBookedHours, 1), Math.Round((double)totalPossibleHours, 1), Math.Round((double)avgUtilization, 1));
                     }
                     else
                     {
@@ -194,7 +194,7 @@ namespace ResourceBooking.Services
                     TotalBookingsToday = todayBookings.Count,
                     TotalBookingsThisWeek = weekBookings,
                     TotalBookingsThisMonth = monthBookings,
-                    AverageUtilizationPercentage = Math.Round(avgUtilization, 0),
+                    AverageUtilizationPercentage = Math.Round((double)avgUtilization, 0),
                     ActiveUsers = activeUserCount,
                     UnavailableResourcesInfo = unavailableResources.Select(r => new UnavailableResourceInfo
                     {
@@ -243,7 +243,7 @@ namespace ResourceBooking.Services
                     {
                         ResourceName = r.Name,
                         BookingCount = r.Bookings.Count,
-                        TotalHours = Math.Round(r.Bookings.Sum(b => (b.EndTime - b.StartTime).TotalHours), 2)
+                        TotalHours = Math.Round(r.Bookings.Sum(b => (double)(b.EndTime - b.StartTime).TotalHours), 2)
                     })
                     .OrderByDescending(s => s.BookingCount)
                     .ToList();
@@ -282,7 +282,7 @@ namespace ResourceBooking.Services
                 var utilization = totalPossibleHours > 0 ? (totalBookedHours / totalPossibleHours) * 100 : 0;
                 
                 _logger.LogInformation("Resource {ResourceId}: {BookedHours}h booked out of {PossibleHours}h available = {Utilization}%", 
-                    resourceId, Math.Round(totalBookedHours, 2), Math.Round(totalPossibleHours, 2), Math.Round(utilization, 2));
+                    resourceId, Math.Round((double)totalBookedHours, 2), Math.Round((double)totalPossibleHours, 2), Math.Round((double)utilization, 2));
 
                 return utilization;
             }

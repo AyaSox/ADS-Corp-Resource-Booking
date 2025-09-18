@@ -11,8 +11,7 @@ services:
         value: Production
       - key: ConnectionStrings__DefaultConnection
         value: "Data Source=/data/ResourceBooking.db"
-
-disks:
-  - name: sqlite-disk
-    mountPath: /data
-    sizeGB: 1
+    disk:
+      name: sqlite-disk
+      mountPath: /data
+      sizeGB: 1
