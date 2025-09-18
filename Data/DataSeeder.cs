@@ -208,4 +208,4 @@ namespace ResourceBooking.Data
             SeedAsync().GetAwaiter().GetResult();
         }
     }
-}}
+}
