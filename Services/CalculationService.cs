@@ -154,18 +154,19 @@ namespace ResourceBooking.Services
                 
                 if (availableResources.Any())
                 {
-                    // Get all bookings this month for utilization calculation
                     var monthBookingsForUtilization = await _db.Bookings
                         .Where(b => !b.Cancelled && 
                                    b.StartTime >= startOfMonth && 
-                                   b.EndTime <= today.AddDays(1))
+                                   b.EndTime <= endOfToday)
                         .ToListAsync();
 
                     if (monthBookingsForUtilization.Any())
                     {
                         var totalBookedHours = monthBookingsForUtilization.Sum(b => (b.EndTime - b.StartTime).TotalHours);
-                        var businessHoursThisMonth = CalculateBusinessHours(startOfMonth, today);
-                        var totalPossibleHours = availableResources.Count * businessHoursThisMonth;
+                        
+                        // Simplified utilization calculation for broader DB compatibility
+                        var daysInMonthSoFar = (today - startOfMonth).Days + 1;
+                        var totalPossibleHours = availableResources.Count * daysInMonthSoFar * BusinessHoursPerDay;
                         
                         avgUtilization = totalPossibleHours > 0 ? (totalBookedHours / totalPossibleHours) * 100 : 0;
                         
@@ -178,6 +179,13 @@ namespace ResourceBooking.Services
                     }
                 }
 
+                // Active Users this month
+                var activeUserCount = await _db.Bookings
+                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday)
+                    .Select(b => b.UserId)
+                    .Distinct()
+                    .CountAsync();
+
                 var dashboardStats = new DashboardStats
                 {
                     TotalResources = resources.Count,
@@ -187,6 +195,7 @@ namespace ResourceBooking.Services
                     TotalBookingsThisWeek = weekBookings,
                     TotalBookingsThisMonth = monthBookings,
                     AverageUtilizationPercentage = Math.Round(avgUtilization, 0),
+                    ActiveUsers = activeUserCount,
                     UnavailableResourcesInfo = unavailableResources.Select(r => new UnavailableResourceInfo
                     {
                         Name = r.Name,
