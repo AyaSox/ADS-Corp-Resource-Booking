@@ -72,7 +72,7 @@
     </div>
 </div>
 
-<!-- Popular Resources -->
+<!-- Popular Resources & Top Users -->
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card">
@@ -91,19 +91,11 @@
                                 <small class="text-muted">@resource.BookingCount bookings • @resource.TotalHours hours</small>
                             </div>
                             <div class="text-end">
-                                @{
-                                    var stars = Math.Min(5, Math.Max(0, (int)Math.Round(resource.PopularityStars)));
-                                }
+                                @{ var stars = Math.Min(5, Math.Max(0, (int)Math.Round(resource.PopularityStars))); }
                                 @for (int i = 1; i <= 5; i++)
                                 {
-                                    if (i <= stars)
-                                    {
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-star text-muted"></i>
-                                    }
+                                    if (i <= stars) { <i class="bi bi-star-fill text-warning"></i>; }
+                                    else { <i class="bi bi-star text-muted"></i>; }
                                 }
                             </div>
                         </div>
@@ -116,8 +108,6 @@
             </div>
         </div>
     </div>
-
-    <!-- User Activity -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -149,40 +139,18 @@
     </div>
 </div>
 
-<!-- Resource Utilization Chart Placeholder -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-graph-up text-success me-2"></i>Resource Utilization Trends</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-lightbulb me-2"></i>Insights</h6>
-                            <ul class="mb-0">
-                                <li><strong>Peak Usage:</strong> Most bookings occur during business hours (9 AM - 5 PM)</li>
-                                <li><strong>Popular Days:</strong> Tuesday through Thursday show highest utilization</li>
-                                <li><strong>Resource Efficiency:</strong> Conference rooms have the highest booking frequency</li>
-                                <li><strong>Growth Trend:</strong> @Model.DashboardStats.AverageUtilizationPercentage% utilization indicates healthy resource usage</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h6>System Health</h6>
-                                <div class="progress mb-2" style="height: 10px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: @Model.DashboardStats.AverageUtilizationPercentage%"></div>
-                                </div>
-                                <small class="text-muted">@Model.DashboardStats.AverageUtilizationPercentage% Utilization</small>
-                                <div class="mt-3">
-                                    <span class="badge bg-success">Optimal</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<!-- System Health (kept) -->
+<div class="row mb-4">
+    <div class="col-md-4 ms-auto">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h6>System Health</h6>
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @Model.DashboardStats.AverageUtilizationPercentage%"></div>
+                </div>
+                <small class="text-muted">@Model.DashboardStats.AverageUtilizationPercentage% Utilization</small>
+                <div class="mt-3">
+                    <span class="badge bg-success">Optimal</span>
                 </div>
             </div>
         </div>
