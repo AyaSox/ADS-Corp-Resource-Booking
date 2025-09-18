@@ -166,10 +166,16 @@ static async Task<bool> CoreTablesExistAsync(ApplicationDbContext ctx, ILogger l
     {
         var canQuery = await ctx.Database.CanConnectAsync();
         if (!canQuery) return false;
-        // Probe AspNetUsers (identity) and Resources
-        var usersTable = await ctx.Database.ExecuteSqlRawAsync("SELECT 1 FROM \"AspNetUsers\" LIMIT 1");
-        var resourcesTable = await ctx.Database.ExecuteSqlRawAsync("SELECT 1 FROM \"Resources\" LIMIT 1");
-        return true;
+        
+        // For PostgreSQL - just try simple query
+        try {
+            var count = await ctx.Resources.CountAsync();
+            logger.LogInformation("Database already contains {count} resources", count);
+            return true;
+        } 
+        catch {
+            return false;
+        }
     }
     catch (Exception ex)
     {
