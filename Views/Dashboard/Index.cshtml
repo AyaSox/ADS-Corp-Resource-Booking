@@ -11,68 +11,60 @@
     </div>
 </div>
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
+<!-- Statistics Cards (updated styles to match Reports) -->
+<div class="row mb-4 g-3">
     <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
+        <div class="card border-0 shadow-sm text-white" style="background: linear-gradient(135deg,#0d6efd,#0751bd);">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title">Total Resources</h6>
+                        <small class="text-light text-uppercase fw-semibold">Resources</small>
                         <h3 class="mb-0">@Model.DashboardStats.TotalResources</h3>
-                        <small>@Model.DashboardStats.AvailableResources available</small>
+                        <small class="text-light-50">@Model.DashboardStats.AvailableResources available</small>
                     </div>
-                    <div class="text-end">
-                        <i class="bi bi-building display-4" style="opacity: 0.8;"></i>
-                    </div>
+                    <i class="bi bi-building display-6 opacity-75"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
+        <div class="card border-0 shadow-sm text-white" style="background: linear-gradient(135deg,#198754,#0f5c39);">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title">Today's Bookings</h6>
+                        <small class="text-light text-uppercase fw-semibold">Today's Bookings</small>
                         <h3 class="mb-0">@Model.DashboardStats.TotalBookingsToday</h3>
-                        <small>Active bookings for today</small>
+                        <small class="text-light-50">Active today</small>
                     </div>
-                    <div class="text-end">
-                        <i class="bi bi-calendar-check display-4" style="opacity: 0.8;"></i>
-                    </div>
+                    <i class="bi bi-calendar-check display-6 opacity-75"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
+        <div class="card border-0 shadow-sm text-white" style="background: linear-gradient(135deg,#0dcaf0,#07839d);">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title">This Month</h6>
+                        <small class="text-light text-uppercase fw-semibold">This Month</small>
                         <h3 class="mb-0">@Model.DashboardStats.TotalBookingsThisMonth</h3>
-                        <small>Total bookings this month</small>
+                        <small class="text-light-50">Total bookings</small>
                     </div>
-                    <div class="text-end">
-                        <i class="bi bi-graph-up display-4" style="opacity: 0.8;"></i>
-                    </div>
+                    <i class="bi bi-graph-up display-6 opacity-75"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
+        <div class="card border-0 shadow-sm text-white" style="background: linear-gradient(135deg,#ffc107,#c28a00);">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="card-title">Avg. Utilization</h6>
+                        <small class="text-light text-uppercase fw-semibold">Avg Utilization</small>
                         <h3 class="mb-0">@Model.DashboardStats.AverageUtilizationPercentage%</h3>
-                        <small>Resource usage efficiency</small>
+                        <small class="text-light-50">Efficiency</small>
                     </div>
-                    <div class="text-end">
-                        <i class="bi bi-pie-chart display-4" style="opacity: 0.8;"></i>
-                    </div>
+                    <i class="bi bi-pie-chart display-6 opacity-75"></i>
                 </div>
             </div>
         </div>
