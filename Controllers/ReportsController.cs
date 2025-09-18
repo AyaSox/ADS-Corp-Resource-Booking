@@ -21,36 +21,78 @@ namespace ResourceBooking.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        // Added optional quick range + custom date parameters
+        public async Task<IActionResult> Index(string? range, DateTime? start, DateTime? end)
         {
             try
             {
-                _logger.LogInformation("=== REPORTS CONTROLLER - Starting Data Collection ===");
+                // Resolve date range
                 var today = DateTime.Today;
-                var endOfToday = today.AddDays(1);
-                var startOfMonth = new DateTime(today.Year, today.Month, 1);
-                var startOfLastMonth = startOfMonth.AddMonths(-1);
+                DateTime rangeStart;
+                DateTime rangeEndExclusive; // exclusive end boundary
+                string quickRange = range ?? "this-month";
+
+                switch (quickRange)
+                {
+                    case "last-month":
+                        var firstOfThisMonth = new DateTime(today.Year, today.Month, 1);
+                        rangeStart = firstOfThisMonth.AddMonths(-1);
+                        rangeEndExclusive = firstOfThisMonth; // up to before this month
+                        break;
+                    case "last-90":
+                        rangeStart = today.AddDays(-89); // include today -> 90 days window
+                        rangeEndExclusive = today.AddDays(1);
+                        break;
+                    case "custom":
+                        if (start.HasValue && end.HasValue && start.Value.Date <= end.Value.Date)
+                        {
+                            rangeStart = start.Value.Date;
+                            rangeEndExclusive = end.Value.Date.AddDays(1);
+                        }
+                        else
+                        {
+                            // fallback to this month if invalid custom
+                            rangeStart = new DateTime(today.Year, today.Month, 1);
+                            rangeEndExclusive = rangeStart.AddMonths(1);
+                            quickRange = "this-month";
+                        }
+                        break;
+                    case "this-month":
+                    default:
+                        rangeStart = new DateTime(today.Year, today.Month, 1);
+                        rangeEndExclusive = rangeStart.AddMonths(1);
+                        quickRange = "this-month";
+                        break;
+                }
+
+                bool isCustom = quickRange == "custom";
+
+                _logger.LogInformation("Reports range resolved. QuickRange={Quick} Start={Start} EndExclusive={End}", quickRange, rangeStart, rangeEndExclusive);
 
                 var dashboardStats = await _calculationService.GetDashboardStatsAsync() ?? new DashboardStats();
 
-                // Monthly comparison
+                // Monthly comparison (still month based irrespective of view range for now)
+                var thisMonthStart = new DateTime(today.Year, today.Month, 1);
+                var thisMonthEnd = thisMonthStart.AddMonths(1);
+                var lastMonthStart = thisMonthStart.AddMonths(-1);
+
                 var thisMonthBookings = await _db.Bookings
-                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday)
+                    .Where(b => !b.Cancelled && b.StartTime >= thisMonthStart && b.StartTime < thisMonthEnd)
                     .CountAsync();
 
                 var lastMonthBookings = await _db.Bookings
-                    .Where(b => !b.Cancelled && b.StartTime >= startOfLastMonth && b.StartTime < startOfMonth)
+                    .Where(b => !b.Cancelled && b.StartTime >= lastMonthStart && b.StartTime < thisMonthStart)
                     .CountAsync();
 
-                // Pull raw booking rows once, then aggregate in-memory to avoid provider translation issues (SQLite limitation)
-                var monthBookingsRaw = await _db.Bookings
+                // Pull raw booking rows for selected range (SQLite friendly)
+                var rangeBookingsRaw = await _db.Bookings
                     .AsNoTracking()
-                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday)
+                    .Where(b => !b.Cancelled && b.StartTime >= rangeStart && b.StartTime < rangeEndExclusive)
                     .Select(b => new { b.ResourceId, b.UserId, b.StartTime, b.EndTime })
                     .ToListAsync();
 
-                // Resource aggregates (in memory)
-                var resourceAgg = monthBookingsRaw
+                // Resource aggregates
+                var resourceAgg = rangeBookingsRaw
                     .GroupBy(b => b.ResourceId)
                     .Select(g => new
                     {
@@ -66,7 +108,7 @@ namespace ResourceBooking.Controllers
                     .Where(r => resourceIds.Contains(r.Id))
                     .ToDictionaryAsync(r => r.Id, r => r.Name);
 
-                var businessHoursThisPeriod = CalculateBusinessHours(startOfMonth, endOfToday);
+                var businessHoursThisPeriod = CalculateBusinessHours(rangeStart, rangeEndExclusive);
                 var maxBookings = resourceAgg.Any() ? resourceAgg.Max(x => x.BookingCount) : 0;
                 var maxHours = resourceAgg.Any() ? resourceAgg.Max(x => x.TotalMinutes) / 60.0 : 0.0;
                 const double wBookings = 0.6;
@@ -94,10 +136,8 @@ namespace ResourceBooking.Controllers
                     .ThenByDescending(s => s.BookingCount)
                     .ToList();
 
-                _logger.LogInformation("Popular resources computed: {Count}", popularResources.Count);
-
-                // User aggregates (in memory)
-                var userAgg = monthBookingsRaw
+                // User aggregates
+                var userAgg = rangeBookingsRaw
                     .GroupBy(b => b.UserId)
                     .Select(g => new
                     {
@@ -130,7 +170,11 @@ namespace ResourceBooking.Controllers
                     ThisMonthBookings = thisMonthBookings,
                     LastMonthBookings = lastMonthBookings,
                     UserActivity = userActivity,
-                    ReportDate = today
+                    ReportDate = today,
+                    SelectedQuickRange = quickRange,
+                    RangeStart = rangeStart,
+                    RangeEnd = rangeEndExclusive.AddDays(-1), // inclusive end for display
+                    IsCustom = isCustom
                 };
 
                 return View(model);
@@ -140,23 +184,15 @@ namespace ResourceBooking.Controllers
                 _logger.LogError(ex, "Error generating reports: {Message}", ex.Message);
                 TempData["ErrorMessage"] = "Unable to load reports data. Please try again.";
 
-                var debugModel = new ReportsViewModel
+                var fallbackModel = new ReportsViewModel
                 {
-                    DashboardStats = new DashboardStats
-                    {
-                        TotalResources = await _db.Resources.CountAsync(),
-                        AvailableResources = await _db.Resources.CountAsync(r => r.IsAvailable),
-                        UnavailableResources = await _db.Resources.CountAsync(r => !r.IsAvailable),
-                        TotalBookingsThisMonth = await _db.Bookings.CountAsync()
-                    },
-                    PopularResources = new List<ResourcePopularityStats>(),
-                    ThisMonthBookings = await _db.Bookings.CountAsync(),
-                    LastMonthBookings = 0,
-                    UserActivity = new List<UserActivityReport>(),
-                    ReportDate = DateTime.Today
+                    DashboardStats = new DashboardStats(),
+                    SelectedQuickRange = "this-month",
+                    RangeStart = DateTime.Today,
+                    RangeEnd = DateTime.Today,
+                    IsCustom = false
                 };
-
-                return View(debugModel);
+                return View(fallbackModel);
             }
         }
 
@@ -189,6 +225,20 @@ namespace ResourceBooking.Controllers
         public List<UserActivityReport> UserActivity { get; set; } = new();
         public DateTime ReportDate { get; set; }
         public double MonthlyGrowthPercentage => LastMonthBookings == 0 ? (ThisMonthBookings > 0 ? 100 : 0) : Math.Round(((double)(ThisMonthBookings - LastMonthBookings) / LastMonthBookings) * 100, 1);
+
+        // New range-related properties
+        public string SelectedQuickRange { get; set; } = "this-month";
+        public DateTime RangeStart { get; set; }
+        public DateTime RangeEnd { get; set; }
+        public bool IsCustom { get; set; }
+        public string RangeLabel => SelectedQuickRange switch
+        {
+            "this-month" => "This Month",
+            "last-month" => "Last Month",
+            "last-90" => "Last 90 Days",
+            "custom" => $"Custom: {RangeStart:dd MMM yyyy} - {RangeEnd:dd MMM yyyy}",
+            _ => "This Month"
+        };
     }
 
     public class UserActivityReport
