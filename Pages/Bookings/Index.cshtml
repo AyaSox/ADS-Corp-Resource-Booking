@@ -1,0 +1,141 @@
+@page
+@model ResourceBooking.Pages.Bookings.IndexModel
+@{
+    ViewData["Title"] = "Bookings";
+}
+
+<h2>Bookings</h2>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">Create New Booking</a>
+        <a asp-controller="Bookings" asp-action="Calendar" class="btn btn-outline-info">Calendar View</a>
+        <a asp-controller="Bookings" asp-action="Export" asp-route-resourceId="@Model.ResourceId" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-search="@Model.Search" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+    </div>
+    <div class="col-md-8">
+        <form method="get" class="row g-3">
+            <input type="hidden" name="page" value="1" />
+            <div class="col-md-3">
+                <select name="ResourceId" class="form-select">
+                    <option value="">All Resources</option>
+                    @foreach (var r in Model.Resources)
+                    {
+                        <option value="@r.Id" selected="@(Model.ResourceId == r.Id)">@r.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="Date" class="form-control" value="@(Model.Date?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="Search" class="form-control" placeholder="Search..." value="@Model.Search" />
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                <a asp-page="/Bookings/Index" class="btn btn-outline-danger">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.TotalCount > 0)
+{
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted">Showing @((Model.Page - 1) * Model.PageSize + 1) to @Math.Min(Model.Page * Model.PageSize, Model.TotalCount) of @Model.TotalCount bookings</small>
+        <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+    </div>
+}
+
+@if (Model.Items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Booked By</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr class="@(item.Cancelled ? "table-secondary" : "")">
+                    <td>@item.Resource?.Name</td>
+                    <td>@item.LocalStartTime.ToString("MMM dd, yyyy HH:mm")</td>
+                    <td>@item.LocalEndTime.ToString("MMM dd, yyyy HH:mm")</td>
+                    <td>@item.BookedByName</td>
+                    <td>@item.Purpose</td>
+                    <td>
+                        @if (item.Cancelled)
+                        {
+                            <span class="badge bg-danger">Cancelled</span>
+                        }
+                        else if (item.EndTime < DateTime.UtcNow)
+                        {
+                            <span class="badge bg-secondary">Completed</span>
+                        }
+                        else if (item.StartTime <= DateTime.UtcNow && item.EndTime > DateTime.UtcNow)
+                        {
+                            <span class="badge bg-success">In Progress</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">Upcoming</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-controller="Bookings" asp-action="Ics" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Download calendar event"><i class="bi bi-calendar-plus"></i></a>
+                            @if (!item.Cancelled && item.StartTime > DateTime.UtcNow && item.UserId == Model.CurrentUserId)
+                            {
+                                <a asp-controller="Bookings" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-controller="Bookings" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Bookings pagination">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page - 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search"><i class="bi bi-chevron-left"></i> Prev</a></li>
+                }
+                @{
+                    int startPage = Math.Max(1, Model.Page - 2);
+                    int endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+                }
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@i" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">@i</a></li>
+                }
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page + 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">Next <i class="bi bi-chevron-right"></i></a></li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-info">
+        <h4>No bookings found</h4>
+        <p>There are no bookings that match your criteria. <a asp-controller="Bookings" asp-action="Create" class="alert-link">Create a new booking</a>.</p>
+    </div>
+}

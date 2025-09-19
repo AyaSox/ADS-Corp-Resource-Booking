@@ -42,7 +42,10 @@ builder.Services.AddScoped<IdentityDataSeeder>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Bookings");
+});
 
 builder.Services.AddLogging(logging =>
 {
