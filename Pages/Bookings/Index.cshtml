@@ -16,7 +16,7 @@
     </div>
     <div class="col-md-8">
         <form method="get" class="row g-3" aria-labelledby="pageTitle">
-            <input type="hidden" name="page" value="1" />
+            <input type="hidden" name="CurrentPage" value="1" />
             <div class="col-md-3">
                 <label for="ResourceId" class="form-label small">Resource</label>
                 <select id="ResourceId" name="ResourceId" class="form-select" aria-label="Filter by resource">
@@ -46,8 +46,8 @@
 @if (Model.TotalCount > 0)
 {
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <small class="text-muted">Showing @((Model.Page - 1) * Model.PageSize + 1) to @Math.Min(Model.Page * Model.PageSize, Model.TotalCount) of @Model.TotalCount bookings</small>
-        <small class="text-muted">Page @Model.Page of @Model.TotalPages</small>
+        <small class="text-muted">Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCount) of @Model.TotalCount bookings</small>
+        <small class="text-muted">Page @Model.CurrentPage of @Model.TotalPages</small>
     </div>
 }
 
@@ -117,19 +117,19 @@
             <ul class="pagination justify-content-center">
                 @if (Model.HasPreviousPage)
                 {
-                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page - 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search"><i class="bi bi-chevron-left" aria-hidden="true"></i> <span class="visually-hidden">Previous page</span> Prev</a></li>
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-CurrentPage="@(Model.CurrentPage - 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search"><i class="bi bi-chevron-left" aria-hidden="true"></i> <span class="visually-hidden">Previous page</span> Prev</a></li>
                 }
                 @{
-                    int startPage = Math.Max(1, Model.Page - 2);
-                    int endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+                    int startPage = Math.Max(1, Model.CurrentPage - 2);
+                    int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
                 }
                 @for (int i = startPage; i <= endPage; i++)
                 {
-                    <li class="page-item @(i == Model.Page ? "active" : "")"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@i" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">@i</a></li>
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")"><a class="page-link" asp-page="/Bookings/Index" asp-route-CurrentPage="@i" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">@i</a></li>
                 }
                 @if (Model.HasNextPage)
                 {
-                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page + 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">Next <i class="bi bi-chevron-right" aria-hidden="true"></i><span class="visually-hidden">Next page</span></a></li>
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-CurrentPage="@(Model.CurrentPage + 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">Next <i class="bi bi-chevron-right" aria-hidden="true"></i><span class="visually-hidden">Next page</span></a></li>
                 }
             </ul>
         </nav>

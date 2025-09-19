@@ -31,14 +31,16 @@ public class CreateModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int? resourceId)
     {
-        Resources = await _db.Resources.Where(r => r.IsAvailable).OrderBy(r => r.Name).ToListAsync();
+        // Show all resources so users can see options even if some are unavailable
+        Resources = await _db.Resources.OrderBy(r => r.Name).ToListAsync();
         if (resourceId.HasValue) Input.ResourceId = resourceId.Value;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Resources = await _db.Resources.Where(r => r.IsAvailable).OrderBy(r => r.Name).ToListAsync();
+        // Repopulate for redisplay on validation errors
+        Resources = await _db.Resources.OrderBy(r => r.Name).ToListAsync();
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrEmpty(userId)) { ModelState.AddModelError("", "User not found. Please log in again."); }
         if (Input.EndTime <= Input.StartTime) { ModelState.AddModelError(nameof(Input.EndTime), "End time must be after start time."); }

@@ -36,14 +36,14 @@ public class IndexModel : PageModel
 
     // Paging
     [BindProperty(SupportsGet = true)]
-    public int Page { get; set; } = 1;
+    public int CurrentPage { get; set; } = 1;
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = 15;
 
     public int TotalPages { get; set; }
     public int TotalCount { get; set; }
-    public bool HasPreviousPage => Page > 1;
-    public bool HasNextPage => Page < TotalPages;
+    public bool HasPreviousPage => CurrentPage > 1;
+    public bool HasNextPage => CurrentPage < TotalPages;
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -75,13 +75,13 @@ public class IndexModel : PageModel
 
         TotalCount = await q.CountAsync();
         TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-        if (Page < 1) Page = 1;
+        if (CurrentPage < 1) CurrentPage = 1;
         if (TotalPages == 0) TotalPages = 1;
-        if (Page > TotalPages) Page = TotalPages;
+        if (CurrentPage > TotalPages) CurrentPage = TotalPages;
 
         Items = await q
             .OrderBy(b => b.StartTime)
-            .Skip((Page - 1) * PageSize)
+            .Skip((CurrentPage - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
 
