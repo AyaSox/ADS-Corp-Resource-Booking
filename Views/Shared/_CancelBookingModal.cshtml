@@ -1,0 +1,24 @@
+<!-- Shared Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white py-2">
+        <h5 class="modal-title" id="cancelBookingTitle"><i class="bi bi-x-circle"></i> Confirm Cancellation</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">You are about to cancel this booking:</p>
+        <ul class="list-unstyled small mb-2">
+            <li><strong>Resource:</strong> <span id="cb-resource"></span></li>
+            <li><strong>When:</strong> <span id="cb-range"></span></li>
+            <li><strong>Purpose:</strong> <span id="cb-purpose"></span></li>
+        </ul>
+        <div class="alert alert-warning py-2 px-3 small mb-0" role="alert"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> This action cannot be undone. The slot will become available to others.</div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Booking</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmCancelBtn"><i class="bi bi-trash" aria-hidden="true"></i> Cancel Booking</button>
+      </div>
+    </div>
+  </div>
+</div>

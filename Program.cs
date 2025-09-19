@@ -45,6 +45,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Bookings");
+    options.Conventions.AuthorizeFolder("/Resources");
 });
 
 builder.Services.AddLogging(logging =>

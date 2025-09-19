@@ -1,0 +1,35 @@
+@page
+@model ResourceBooking.Pages.Resources.IndexModel
+@{
+    ViewData["Title"] = "Resources";
+}
+
+<h2>Resources</h2>
+
+<p>
+    <a asp-page="/Resources/Create" class="btn btn-primary">Create New Resource</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model.Items)
+    {
+        <tr>
+            <td>@item.Name</td>
+            <td>@item.Location</td>
+            <td><span class="badge @item.StatusBadgeClass">@item.StatusDisplay</span></td>
+            <td>
+                <a asp-page="/Resources/Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

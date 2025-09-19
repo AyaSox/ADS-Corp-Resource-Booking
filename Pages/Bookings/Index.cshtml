@@ -4,21 +4,22 @@
     ViewData["Title"] = "Bookings";
 }
 
-<h2>Bookings</h2>
+<h2 id="pageTitle">Bookings</h2>
 
 <div class="row mb-3">
     <div class="col-md-4">
-        <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">Create New Booking</a>
-        <a asp-controller="Bookings" asp-action="Calendar" class="btn btn-outline-info">Calendar View</a>
-        <a asp-controller="Bookings" asp-action="Export" asp-route-resourceId="@Model.ResourceId" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-search="@Model.Search" class="btn btn-outline-success">
-            <i class="bi bi-download"></i> Export CSV
+        <a asp-page="/Bookings/Create" class="btn btn-primary" aria-label="Create new booking">Create New Booking</a>
+        <a asp-controller="Bookings" asp-action="Calendar" class="btn btn-outline-info" aria-label="Calendar view">Calendar View</a>
+        <a asp-controller="Bookings" asp-action="Export" asp-route-resourceId="@Model.ResourceId" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-search="@Model.Search" class="btn btn-outline-success" aria-label="Export CSV">
+            <i class="bi bi-download" aria-hidden="true"></i> Export CSV
         </a>
     </div>
     <div class="col-md-8">
-        <form method="get" class="row g-3">
+        <form method="get" class="row g-3" aria-labelledby="pageTitle">
             <input type="hidden" name="page" value="1" />
             <div class="col-md-3">
-                <select name="ResourceId" class="form-select">
+                <label for="ResourceId" class="form-label small">Resource</label>
+                <select id="ResourceId" name="ResourceId" class="form-select" aria-label="Filter by resource">
                     <option value="">All Resources</option>
                     @foreach (var r in Model.Resources)
                     {
@@ -27,14 +28,16 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <input type="date" name="Date" class="form-control" value="@(Model.Date?.ToString("yyyy-MM-dd"))" />
+                <label for="Date" class="form-label small">Date</label>
+                <input id="Date" type="date" name="Date" class="form-control" value="@(Model.Date?.ToString("yyyy-MM-dd"))" aria-label="Filter by date" />
             </div>
             <div class="col-md-3">
-                <input type="text" name="Search" class="form-control" placeholder="Search..." value="@Model.Search" />
+                <label for="Search" class="form-label small">Search</label>
+                <input id="Search" type="text" name="Search" class="form-control" placeholder="Search..." value="@Model.Search" aria-label="Search bookings" />
             </div>
-            <div class="col-md-3">
-                <button class="btn btn-outline-secondary" type="submit">Filter</button>
-                <a asp-page="/Bookings/Index" class="btn btn-outline-danger">Clear</a>
+            <div class="col-md-3 align-self-end">
+                <button class="btn btn-outline-secondary" type="submit" aria-label="Apply filters">Filter</button>
+                <a asp-page="/Bookings/Index" class="btn btn-outline-danger" aria-label="Clear filters">Clear</a>
             </div>
         </form>
     </div>
@@ -51,16 +54,16 @@
 @if (Model.Items.Any())
 {
     <div class="table-responsive">
-        <table class="table table-striped align-middle">
+        <table class="table table-striped align-middle" role="table" aria-describedby="pageTitle">
             <thead>
                 <tr>
-                    <th>Resource</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Booked By</th>
-                    <th>Purpose</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th scope="col">Resource</th>
+                    <th scope="col">Start Time</th>
+                    <th scope="col">End Time</th>
+                    <th scope="col">Booked By</th>
+                    <th scope="col">Purpose</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -91,13 +94,13 @@
                         }
                     </td>
                     <td>
-                        <div class="btn-group" role="group">
-                            <a asp-controller="Bookings" asp-action="Ics" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Download calendar event"><i class="bi bi-calendar-plus"></i></a>
+                        <div class="btn-group" role="group" aria-label="Row actions">
+                            <a asp-controller="Bookings" asp-action="Ics" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Download calendar event"><i class="bi bi-calendar-plus" aria-hidden="true"></i><span class="visually-hidden">Download ICS</span></a>
                             @if (!item.Cancelled && item.StartTime > DateTime.UtcNow && item.UserId == Model.CurrentUserId)
                             {
-                                <a asp-controller="Bookings" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <form asp-controller="Bookings" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                <a asp-page="/Bookings/Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-controller="Bookings" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline booking-cancel-form">
+                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-booking-btn" data-resource="@item.Resource?.Name" data-range="@item.LocalStartTime.ToString("MMM dd yyyy HH:mm") - @item.LocalEndTime.ToString("HH:mm")" data-purpose="@item.Purpose">Cancel</button>
                                 </form>
                             }
                         </div>
@@ -114,7 +117,7 @@
             <ul class="pagination justify-content-center">
                 @if (Model.HasPreviousPage)
                 {
-                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page - 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search"><i class="bi bi-chevron-left"></i> Prev</a></li>
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page - 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search"><i class="bi bi-chevron-left" aria-hidden="true"></i> <span class="visually-hidden">Previous page</span> Prev</a></li>
                 }
                 @{
                     int startPage = Math.Max(1, Model.Page - 2);
@@ -126,7 +129,7 @@
                 }
                 @if (Model.HasNextPage)
                 {
-                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page + 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">Next <i class="bi bi-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" asp-page="/Bookings/Index" asp-route-Page="@(Model.Page + 1)" asp-route-ResourceId="@Model.ResourceId" asp-route-Date="@Model.Date?.ToString("yyyy-MM-dd")" asp-route-Search="@Model.Search">Next <i class="bi bi-chevron-right" aria-hidden="true"></i><span class="visually-hidden">Next page</span></a></li>
                 }
             </ul>
         </nav>
@@ -134,8 +137,30 @@
 }
 else
 {
-    <div class="alert alert-info">
+    <div class="alert alert-info" role="status">
         <h4>No bookings found</h4>
-        <p>There are no bookings that match your criteria. <a asp-controller="Bookings" asp-action="Create" class="alert-link">Create a new booking</a>.</p>
+        <p>There are no bookings that match your criteria. <a asp-page="/Bookings/Create" class="alert-link">Create a new booking</a>.</p>
     </div>
+}
+
+<partial name="_CancelBookingModal" />
+
+@section Scripts {
+    <script>
+        (function(){
+            let targetForm = null;
+            document.addEventListener('click', function(e){
+                const btn = e.target.closest('.cancel-booking-btn');
+                if(!btn) return;
+                e.preventDefault();
+                targetForm = btn.closest('form');
+                document.getElementById('cb-resource').textContent = btn.dataset.resource || '';
+                document.getElementById('cb-range').textContent = btn.dataset.range || '';
+                document.getElementById('cb-purpose').textContent = btn.dataset.purpose || '';
+                const modal = new bootstrap.Modal(document.getElementById('cancelBookingModal'));
+                modal.show();
+                document.getElementById('confirmCancelBtn').onclick = function(){ if(targetForm){ targetForm.submit(); } };
+            });
+        })();
+    </script>
 }

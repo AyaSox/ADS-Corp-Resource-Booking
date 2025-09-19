@@ -28,31 +28,31 @@
                     <!-- Primary Navigation -->
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                            <a class="nav-link @(Context.Request.Path.StartsWithSegments("/Dashboard")?"active":"")" asp-controller="Dashboard" asp-action="Index">
                                 <i class="bi bi-speedometer2"></i>
                                 <span class="d-none d-xl-inline">Dashboard</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Resources" asp-action="Index">
+                            <a class="nav-link @(Context.Request.Path.StartsWithSegments("/Resources")?"active":"")" asp-page="/Resources/Index">
                                 <i class="bi bi-building"></i>
                                 <span class="d-none d-xl-inline">Resources</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-page="/Bookings/Index">
+                            <a class="nav-link @(Context.Request.Path.StartsWithSegments("/Bookings")?"active":"")" asp-page="/Bookings/Index">
                                 <i class="bi bi-calendar-check"></i>
                                 <span class="d-none d-xl-inline">Bookings</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-page="/Bookings/Create">
+                            <a class="nav-link @(Context.Request.Path.StartsWithSegments("/Bookings/Create")?"active":"")" asp-page="/Bookings/Create">
                                 <i class="bi bi-plus-circle"></i>
                                 <span class="d-none d-xl-inline">New</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Bookings" asp-action="Calendar">
+                            <a class="nav-link @(Context.Request.Path.StartsWithSegments("/Bookings/Calendar")?"active":"")" asp-controller="Bookings" asp-action="Calendar">
                                 <i class="bi bi-calendar"></i>
                                 <span class="d-none d-xl-inline">Calendar</span>
                             </a>

@@ -1,0 +1,39 @@
+@page
+@model ResourceBooking.Pages.Resources.CreateModel
+@{
+    ViewData["Title"] = "Create Resource";
+}
+
+<h2>Create Resource</h2>
+<hr />
+<form method="post" aria-label="Create resource form">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label"></label>
+        <input asp-for="Input.Name" class="form-control" />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Description" class="form-label"></label>
+        <textarea asp-for="Input.Description" class="form-control"></textarea>
+        <span asp-validation-for="Input.Description" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Location" class="form-label"></label>
+        <input asp-for="Input.Location" class="form-control" />
+        <span asp-validation-for="Input.Location" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Capacity" class="form-label"></label>
+        <input asp-for="Input.Capacity" class="form-control" />
+        <span asp-validation-for="Input.Capacity" class="text-danger"></span>
+    </div>
+    <div class="form-check mb-3">
+        <input class="form-check-input" asp-for="Input.IsAvailable" />
+        <label class="form-check-label" asp-for="Input.IsAvailable"></label>
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a asp-page="/Resources/Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
