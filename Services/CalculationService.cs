@@ -9,11 +9,11 @@ namespace ResourceBooking.Services
         private readonly ApplicationDbContext _db;
         private readonly ILogger<CalculationService> _logger;
 
-        // Business hours configuration
-        private const int BusinessStartHour = 8;  // 8 AM
-        private const int BusinessEndHour = 18;   // 6 PM
+        // Business hours configuration (UTC-based)
+        private const int BusinessStartHour = 8;  // 08:00
+        private const int BusinessEndHour = 18;   // 18:00
         private const int BusinessHoursPerDay = BusinessEndHour - BusinessStartHour; // 10 hours
-        private readonly int[] BusinessDays = { 1, 2, 3, 4, 5 }; // Monday to Friday
+        private readonly int[] BusinessDays = { 1, 2, 3, 4, 5 }; // Monday=1..Friday=5
 
         public CalculationService(ApplicationDbContext db, ILogger<CalculationService> logger)
         {
@@ -25,33 +25,53 @@ namespace ResourceBooking.Services
         {
             try
             {
-                var resource = await _db.Resources.FindAsync(resourceId);
+                var resource = await _db.Resources.AsNoTracking().FirstOrDefaultAsync(r => r.Id == resourceId);
                 if (resource == null)
                     return new ResourceUtilizationStats { ResourceName = "Unknown" };
 
+                // include overlapping bookings: b.Start < end AND b.End > start
                 var bookings = await _db.Bookings
-                    .Where(b => b.ResourceId == resourceId && 
-                               !b.Cancelled && 
-                               b.StartTime >= startDate && 
-                               b.EndTime <= endDate)
+                    .AsNoTracking()
+                    .Where(b => b.ResourceId == resourceId && !b.Cancelled && b.StartTime < endDate && b.EndTime > startDate)
                     .ToListAsync();
 
-                var totalHours = bookings.Sum(b => (b.EndTime - b.StartTime).TotalHours);
-                var totalPossibleHours = CalculateBusinessHours(startDate, endDate);
-                var utilizationPercentage = totalPossibleHours > 0 ? (totalHours / totalPossibleHours) * 100 : 0;
+                // capacity within business hours for window
+                var totalPossibleHours = CalculateBusinessHoursClipped(startDate, endDate);
+
+                // sum booked minutes clipped to business hours and range
+                double bookedMinutes = 0;
+                foreach (var b in bookings)
+                {
+                    var s = b.StartTime < startDate ? startDate : b.StartTime;
+                    var e = b.EndTime > endDate ? endDate : b.EndTime;
+                    if (e <= s) continue;
+                    bookedMinutes += CalculateBookedMinutesWithinBusinessHours(s, e);
+                }
+
+                var totalHoursBooked = Math.Round(bookedMinutes / 60.0, 2);
+                var utilizationPercentage = totalPossibleHours > 0 ? Math.Round((totalHoursBooked / totalPossibleHours) * 100.0, 2) : 0;
+
+                var avgDuration = bookings.Count > 0 ? Math.Round(bookings.Average(b => (b.EndTime - b.StartTime).TotalHours), 2) : 0.0;
+
+                DateTime mostPopularSlot = DateTime.MinValue;
+                if (bookings.Count > 0)
+                {
+                    var hour = bookings.GroupBy(b => b.StartTime.Hour)
+                        .OrderByDescending(g => g.Count())
+                        .ThenBy(g => g.Key)
+                        .Select(g => g.Key)
+                        .First();
+                    mostPopularSlot = new DateTime(startDate.Year, startDate.Month, startDate.Day, hour, 0, 0, DateTimeKind.Utc);
+                }
 
                 return new ResourceUtilizationStats
                 {
                     ResourceName = resource.Name,
                     TotalBookings = bookings.Count,
-                    TotalHoursBooked = Math.Round(totalHours, 2),
-                    UtilizationPercentage = Math.Round(utilizationPercentage, 2),
-                    AverageBookingDuration = bookings.Count > 0 ? 
-                        Math.Round(bookings.Average(b => (b.EndTime - b.StartTime).TotalHours), 2) : 0,
-                    MostPopularTimeSlot = bookings.Count > 0 ? 
-                        bookings.GroupBy(b => b.StartTime.Hour)
-                               .OrderByDescending(g => g.Count())
-                               .First().First().StartTime : DateTime.MinValue
+                    TotalHoursBooked = totalHoursBooked,
+                    UtilizationPercentage = utilizationPercentage,
+                    AverageBookingDuration = avgDuration,
+                    MostPopularTimeSlot = mostPopularSlot
                 };
             }
             catch (Exception ex)
@@ -65,20 +85,19 @@ namespace ResourceBooking.Services
         {
             try
             {
-                var user = await _db.Users.FindAsync(userId);
+                var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return new UserBookingStats { UserName = "Unknown" };
 
                 var bookings = await _db.Bookings
+                    .AsNoTracking()
                     .Include(b => b.Resource)
-                    .Where(b => b.UserId == userId && 
-                               b.StartTime >= startDate && 
-                               b.StartTime < endDate) // use StartTime boundary only so future cancelled bookings in range are counted
+                    .Where(b => b.UserId == userId && b.StartTime >= startDate && b.StartTime < endDate)
                     .ToListAsync();
 
                 var cancelledBookings = bookings.Where(b => b.Cancelled).ToList();
                 var activeBookings = bookings.Where(b => !b.Cancelled).ToList();
-                
+
                 var totalHours = activeBookings.Sum(b => (b.EndTime - b.StartTime).TotalHours);
                 var mostUsedResource = activeBookings
                     .GroupBy(b => b.Resource.Name)
@@ -88,13 +107,11 @@ namespace ResourceBooking.Services
                 return new UserBookingStats
                 {
                     UserName = user.FullName,
-                    TotalBookings = bookings.Count, // Include all bookings (cancelled + active) for cancellation rate calculation
+                    TotalBookings = bookings.Count,
                     CancelledBookings = cancelledBookings.Count,
                     TotalHoursBooked = Math.Round(totalHours, 2),
-                    AverageBookingDuration = activeBookings.Count > 0 ? 
-                        Math.Round(activeBookings.Average(b => (b.EndTime - b.StartTime).TotalHours), 2) : 0,
+                    AverageBookingDuration = activeBookings.Count > 0 ? Math.Round(activeBookings.Average(b => (b.EndTime - b.StartTime).TotalHours), 2) : 0,
                     MostUsedResource = mostUsedResource
-                    // CancellationRate is calculated automatically in the property
                 };
             }
             catch (Exception ex)
@@ -108,79 +125,50 @@ namespace ResourceBooking.Services
         {
             try
             {
-                var today = DateTime.Today;
-                var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
-                var startOfMonth = new DateTime(today.Year, today.Month, 1);
-                var endOfToday = today.AddDays(1);
+                var utcToday = DateTime.UtcNow.Date;
+                var startOfWeek = utcToday.AddDays(-(int)utcToday.DayOfWeek);
+                var startOfMonth = new DateTime(utcToday.Year, utcToday.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endOfToday = utcToday.AddDays(1);
 
-                _logger.LogInformation("=== DASHBOARD STATS CALCULATION ===");
+                _logger.LogInformation("=== DASHBOARD STATS CALCULATION (UTC) ===");
 
-                // Get all resources
-                var resources = await _db.Resources.ToListAsync();
+                var resources = await _db.Resources.AsNoTracking().ToListAsync();
                 var unavailableResources = resources.Where(r => !r.IsAvailable).ToList();
 
-                _logger.LogInformation("Found {TotalResources} total resources, {AvailableCount} available", 
-                    resources.Count, resources.Count(r => r.IsAvailable));
-
-                // Get today's bookings
                 var todayBookings = await _db.Bookings
+                    .AsNoTracking()
                     .Include(b => b.Resource)
                     .Include(b => b.User)
-                    .Where(b => !b.Cancelled && 
-                               b.StartTime >= today && 
-                               b.StartTime < endOfToday)
+                    .Where(b => !b.Cancelled && b.StartTime >= utcToday && b.StartTime < endOfToday)
                     .ToListAsync();
 
-                // Get week bookings
-                var weekBookings = await _db.Bookings
-                    .Where(b => !b.Cancelled && 
-                               b.StartTime >= startOfWeek && 
-                               b.StartTime < startOfWeek.AddDays(7))
+                var weekBookings = await _db.Bookings.AsNoTracking()
+                    .Where(b => !b.Cancelled && b.StartTime >= startOfWeek && b.StartTime < startOfWeek.AddDays(7))
                     .CountAsync();
 
-                // Get month bookings
-                var monthBookings = await _db.Bookings
-                    .Where(b => !b.Cancelled && 
-                               b.StartTime >= startOfMonth && 
-                               b.StartTime < startOfMonth.AddMonths(1))
+                var monthBookings = await _db.Bookings.AsNoTracking()
+                    .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < startOfMonth.AddMonths(1))
                     .CountAsync();
 
-                _logger.LogInformation("Bookings - Today: {Today}, Week: {Week}, Month: {Month}", 
-                    todayBookings.Count, weekBookings, monthBookings);
-
-                // Calculate average utilization for available resources
                 var availableResources = resources.Where(r => r.IsAvailable).ToList();
                 double avgUtilization = 0;
-                
+
                 if (availableResources.Any())
                 {
-                    var monthBookingsForUtilization = await _db.Bookings
-                        .Where(b => !b.Cancelled && 
-                                   b.StartTime >= startOfMonth && 
-                                   b.EndTime <= endOfToday)
+                    var monthBookingsForUtilization = await _db.Bookings.AsNoTracking()
+                        .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.EndTime <= endOfToday)
                         .ToListAsync();
 
                     if (monthBookingsForUtilization.Any())
                     {
                         var totalBookedHours = monthBookingsForUtilization.Sum(b => (b.EndTime - b.StartTime).TotalHours);
-                        
-                        // Simplified utilization calculation for broader DB compatibility
-                        var daysInMonthSoFar = (today - startOfMonth).Days + 1;
+                        var daysInMonthSoFar = (utcToday - startOfMonth).Days + 1;
                         var totalPossibleHours = availableResources.Count * daysInMonthSoFar * BusinessHoursPerDay;
-                        
                         avgUtilization = totalPossibleHours > 0 ? (totalBookedHours / totalPossibleHours) * 100 : 0;
-                        
-                        _logger.LogInformation("Utilization: {BookedHours}h booked / {PossibleHours}h possible = {Utilization}%", 
-                            Math.Round((double)totalBookedHours, 1), Math.Round((double)totalPossibleHours, 1), Math.Round((double)avgUtilization, 1));
-                    }
-                    else
-                    {
-                        _logger.LogInformation("No bookings found for utilization calculation");
                     }
                 }
 
-                // Active Users this month
-                var activeUserCount = await _db.Bookings
+                var activeUserCount = await _db.Bookings.AsNoTracking()
                     .Where(b => !b.Cancelled && b.StartTime >= startOfMonth && b.StartTime < endOfToday)
                     .Select(b => b.UserId)
                     .Distinct()
@@ -215,9 +203,6 @@ namespace ResourceBooking.Services
                     }).ToList()
                 };
 
-                _logger.LogInformation("FINAL Dashboard Stats: Utilization = {Utilization}%", 
-                    dashboardStats.AverageUtilizationPercentage);
-
                 return dashboardStats;
             }
             catch (Exception ex)
@@ -232,9 +217,8 @@ namespace ResourceBooking.Services
             try
             {
                 var resources = await _db.Resources
-                    .Include(r => r.Bookings.Where(b => !b.Cancelled && 
-                                                       b.StartTime >= startDate && 
-                                                       b.EndTime <= endDate))
+                    .AsNoTracking()
+                    .Include(r => r.Bookings.Where(b => !b.Cancelled && b.StartTime >= startDate && b.EndTime <= endDate))
                     .ToListAsync();
 
                 var stats = resources
@@ -248,12 +232,10 @@ namespace ResourceBooking.Services
                     .OrderByDescending(s => s.BookingCount)
                     .ToList();
 
-                // Calculate utilization percentages based on business hours
-                var totalPossibleHours = CalculateBusinessHours(startDate, endDate);
+                var totalPossibleHours = CalculateBusinessHoursClipped(startDate, endDate);
                 foreach (var stat in stats)
                 {
-                    stat.UtilizationPercentage = totalPossibleHours > 0 ? 
-                        Math.Round((stat.TotalHours / totalPossibleHours) * 100, 2) : 0;
+                    stat.UtilizationPercentage = totalPossibleHours > 0 ? Math.Round((stat.TotalHours / totalPossibleHours) * 100, 2) : 0;
                 }
 
                 return stats;
@@ -269,50 +251,85 @@ namespace ResourceBooking.Services
         {
             try
             {
-                var bookings = await _db.Bookings
-                    .Where(b => b.ResourceId == resourceId && 
-                               !b.Cancelled && 
-                               b.StartTime >= startDate && 
-                               b.EndTime <= endDate)
+                var bookings = await _db.Bookings.AsNoTracking()
+                    .Where(b => b.ResourceId == resourceId && !b.Cancelled && b.StartTime < endDate && b.EndTime > startDate)
                     .ToListAsync();
 
-                var totalBookedHours = bookings.Sum(b => (b.EndTime - b.StartTime).TotalHours);
-                var totalPossibleHours = CalculateBusinessHours(startDate, endDate);
+                double minutes = 0;
+                foreach (var b in bookings)
+                {
+                    var s = b.StartTime < startDate ? startDate : b.StartTime;
+                    var e = b.EndTime > endDate ? endDate : b.EndTime;
+                    if (e <= s) continue;
+                    minutes += CalculateBookedMinutesWithinBusinessHours(s, e);
+                }
 
+                var totalBookedHours = minutes / 60.0;
+                var totalPossibleHours = CalculateBusinessHoursClipped(startDate, endDate);
                 var utilization = totalPossibleHours > 0 ? (totalBookedHours / totalPossibleHours) * 100 : 0;
-                
-                _logger.LogInformation("Resource {ResourceId}: {BookedHours}h booked out of {PossibleHours}h available = {Utilization}%", 
-                    resourceId, Math.Round((double)totalBookedHours, 2), Math.Round((double)totalPossibleHours, 2), Math.Round((double)utilization, 2));
-
                 return utilization;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating utilization percentage for resource {ResourceId}: {Message}", 
-                    resourceId, ex.Message);
+                _logger.LogError(ex, "Error calculating utilization percentage for resource {ResourceId}: {Message}", resourceId, ex.Message);
                 return 0;
             }
         }
 
         /// <summary>
-        /// Calculate total business hours between two dates (Monday-Friday, 8 AM - 6 PM)
+        /// Calculate total business hours between two dates (Mon–Fri, 08:00–18:00). Returns hours.
         /// </summary>
-        private double CalculateBusinessHours(DateTime startDate, DateTime endDate)
+        private double CalculateBusinessHoursClipped(DateTime start, DateTime end)
         {
-            double totalHours = 0;
-            var current = startDate.Date;
+            if (end <= start) return 0;
+            double minutes = 0;
+            var current = start.Date;
+            var lastDate = end.Date;
 
-            while (current <= endDate.Date)
+            while (current <= lastDate)
             {
-                // Check if it's a weekday (Monday = 1, Friday = 5)
                 if (BusinessDays.Contains((int)current.DayOfWeek))
                 {
-                    totalHours += BusinessHoursPerDay;
+                    var dayStart = current.AddHours(BusinessStartHour);
+                    var dayEnd = current.AddHours(BusinessEndHour);
+
+                    var windowStart = start > dayStart ? start : dayStart;
+                    var windowEnd = end < dayEnd ? end : dayEnd;
+
+                    if (windowEnd > windowStart)
+                        minutes += (windowEnd - windowStart).TotalMinutes;
                 }
                 current = current.AddDays(1);
             }
+            return Math.Round(minutes / 60.0, 2);
+        }
 
-            return totalHours;
+        /// <summary>
+        /// Calculate minutes of an interval that fall within business hours (Mon–Fri, 08:00–18:00).
+        /// </summary>
+        private double CalculateBookedMinutesWithinBusinessHours(DateTime start, DateTime end)
+        {
+            if (end <= start) return 0;
+            double minutes = 0;
+            var current = start.Date;
+            var lastDate = end.Date;
+
+            while (current <= lastDate)
+            {
+                if (BusinessDays.Contains((int)current.DayOfWeek))
+                {
+                    var dayStart = current.AddHours(BusinessStartHour);
+                    var dayEnd = current.AddHours(BusinessEndHour);
+
+                    var windowStart = start > dayStart ? start : dayStart;
+                    var windowEnd = end < dayEnd ? end : dayEnd;
+
+                    if (windowEnd > windowStart)
+                        minutes += (windowEnd - windowStart).TotalMinutes;
+                }
+                current = current.AddDays(1);
+            }
+            return minutes;
         }
     }
 }

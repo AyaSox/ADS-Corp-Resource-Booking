@@ -15,7 +15,7 @@ namespace ResourceBooking.Services
             _logger = logger;
         }
 
-        public async Task<List<Booking>> GenerateRecurringBookingsAsync(Booking parentBooking)
+        public async Task<List<Booking>> GenerateRecurringBookingsAsync(Booking parentBooking, CancellationToken ct = default)
         {
             if (!parentBooking.IsRecurring || !parentBooking.RecurrenceType.HasValue || !parentBooking.RecurrenceEndDate.HasValue)
             {
@@ -28,7 +28,8 @@ namespace ResourceBooking.Services
                 parentBooking.StartTime,
                 parentBooking.RecurrenceType.Value,
                 parentBooking.RecurrenceInterval ?? 1,
-                parentBooking.RecurrenceEndDate.Value);
+                parentBooking.RecurrenceEndDate.Value,
+                ct);
 
             var duration = parentBooking.EndTime - parentBooking.StartTime;
 
@@ -45,58 +46,43 @@ namespace ResourceBooking.Services
                     RecurrenceType = parentBooking.RecurrenceType,
                     RecurrenceInterval = parentBooking.RecurrenceInterval,
                     RecurrenceEndDate = parentBooking.RecurrenceEndDate,
-                    ParentBookingId = null // Will be set after parent is saved
+                    ParentBookingId = null // set after parent save
                 };
-
                 recurringBookings.Add(recurringBooking);
             }
 
-            _logger.LogInformation("Generated {Count} recurring bookings from {StartDate} to {EndDate}", 
-                recurringBookings.Count, parentBooking.StartTime, parentBooking.RecurrenceEndDate);
-            
+            _logger.LogInformation("Generated {Count} recurring bookings from {StartDate} to {EndDate}", recurringBookings.Count, parentBooking.StartTime, parentBooking.RecurrenceEndDate);
             return recurringBookings;
         }
 
-        public async Task<bool> HasConflictsAsync(List<Booking> bookings)
+        public async Task<bool> HasConflictsAsync(List<Booking> bookings, CancellationToken ct = default)
         {
-            try
-            {
-                foreach (var booking in bookings)
-                {
-                    var conflicts = await _db.Bookings
-                        .Where(b => b.ResourceId == booking.ResourceId && 
-                                   !b.Cancelled &&
-                                   b.Id != booking.Id &&
-                                   booking.StartTime < b.EndTime && 
-                                   b.StartTime < booking.EndTime)
-                        .AnyAsync();
-
-                    if (conflicts)
-                    {
-                        _logger.LogWarning("Conflict detected for booking on {Date} for resource {ResourceId}", 
-                            booking.StartTime, booking.ResourceId);
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking for conflicts: {Message}", ex.Message);
-                return true; // Assume conflict if we can't check properly
-            }
+            var details = await GetConflictsAsync(bookings, ct);
+            return details.Any(d => d.Conflicts.Count > 0);
         }
 
-        public async Task<List<DateTime>> GetRecurringDatesAsync(DateTime startDate, RecurrenceType recurrenceType, int interval, DateTime endDate)
+        public async Task<List<(Booking Candidate, List<Booking> Conflicts)>> GetConflictsAsync(IEnumerable<Booking> bookings, CancellationToken ct = default)
+        {
+            var result = new List<(Booking, List<Booking>)>();
+            foreach (var booking in bookings)
+            {
+                var conflicts = await _db.Bookings.AsNoTracking()
+                    .Where(b => b.ResourceId == booking.ResourceId && !b.Cancelled && b.Id != booking.Id && booking.StartTime < b.EndTime && b.StartTime < booking.EndTime)
+                    .ToListAsync(ct);
+                result.Add((booking, conflicts));
+            }
+            return result;
+        }
+
+        public async Task<List<DateTime>> GetRecurringDatesAsync(DateTime startDateUtc, RecurrenceType recurrenceType, int interval, DateTime endDateUtc, CancellationToken ct = default)
         {
             var dates = new List<DateTime>();
-            var currentDate = startDate;
+            var currentDate = DateTime.SpecifyKind(startDateUtc, DateTimeKind.Utc);
+            var endUtc = DateTime.SpecifyKind(endDateUtc, DateTimeKind.Utc);
 
-            while (currentDate <= endDate && dates.Count < 100) // Limit to prevent infinite loops
+            while (currentDate <= endUtc && dates.Count < 100)
             {
                 dates.Add(currentDate);
-
                 currentDate = recurrenceType switch
                 {
                     RecurrenceType.Daily => currentDate.AddDays(interval),
@@ -104,63 +90,65 @@ namespace ResourceBooking.Services
                     RecurrenceType.Monthly => currentDate.AddMonths(interval),
                     _ => currentDate.AddDays(interval)
                 };
+                if (ct.IsCancellationRequested) break;
             }
 
-            _logger.LogInformation("Generated {Count} recurring dates from {Start} to {End} with {Type} interval {Interval}", 
-                dates.Count, startDate, endDate, recurrenceType, interval);
-            
+            _logger.LogInformation("Generated {Count} recurring dates from {Start} to {End} with {Type} interval {Interval}", dates.Count, startDateUtc, endDateUtc, recurrenceType, interval);
             return await Task.FromResult(dates);
         }
 
-        public async Task DeleteRecurringSeriesAsync(int parentBookingId)
+        public async Task DeleteRecurringSeriesAsync(int parentBookingId, CancellationToken ct = default)
         {
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
             try
             {
-                var childBookings = await _db.Bookings
-                    .Where(b => b.ParentBookingId == parentBookingId)
-                    .ToListAsync();
-
+                var childBookings = await _db.Bookings.Where(b => b.ParentBookingId == parentBookingId).ToListAsync(ct);
                 _db.Bookings.RemoveRange(childBookings);
-                await _db.SaveChangesAsync();
-
-                _logger.LogInformation("Deleted {Count} recurring bookings for parent {ParentId}", 
-                    childBookings.Count, parentBookingId);
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+                _logger.LogInformation("Deleted {Count} recurring bookings for parent {ParentId}", childBookings.Count, parentBookingId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting recurring series for parent {ParentId}: {Message}", 
-                    parentBookingId, ex.Message);
+                await tx.RollbackAsync(ct);
+                _logger.LogError(ex, "Error deleting recurring series for parent {ParentId}: {Message}", parentBookingId, ex.Message);
                 throw;
             }
         }
 
-        public async Task UpdateRecurringSeriesAsync(int parentBookingId, Booking updatedBooking)
+        public async Task UpdateRecurringSeriesAsync(int parentBookingId, Booking updatedBooking, CancellationToken ct = default)
         {
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
             try
             {
-                var childBookings = await _db.Bookings
-                    .Where(b => b.ParentBookingId == parentBookingId && !b.Cancelled)
-                    .ToListAsync();
-
+                var childBookings = await _db.Bookings.Where(b => b.ParentBookingId == parentBookingId && !b.Cancelled).ToListAsync(ct);
                 var duration = updatedBooking.EndTime - updatedBooking.StartTime;
 
                 foreach (var childBooking in childBookings)
                 {
-                    // Maintain the same day/time but update other properties
                     childBooking.Purpose = $"{updatedBooking.Purpose} (Recurring)";
                     childBooking.EndTime = childBooking.StartTime.Add(duration);
-                    // Note: We're not changing ResourceId to avoid complex conflict checking
                 }
-
-                await _db.SaveChangesAsync();
-                _logger.LogInformation("Updated {Count} recurring bookings for parent {ParentId}", 
-                    childBookings.Count, parentBookingId);
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+                _logger.LogInformation("Updated {Count} recurring bookings for parent {ParentId}", childBookings.Count, parentBookingId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating recurring series for parent {ParentId}: {Message}", 
-                    parentBookingId, ex.Message);
+                await tx.RollbackAsync(ct);
+                _logger.LogError(ex, "Error updating recurring series for parent {ParentId}: {Message}", parentBookingId, ex.Message);
                 throw;
+            }
+        }
+
+        public async Task AddExceptionAsync(int parentBookingId, DateTime occurrenceStartUtc, CancellationToken ct = default)
+        {
+            // Soft-delete or mark a specific occurrence as an exception (skip)
+            var occurrence = await _db.Bookings.FirstOrDefaultAsync(b => b.ParentBookingId == parentBookingId && b.StartTime == occurrenceStartUtc, ct);
+            if (occurrence != null)
+            {
+                occurrence.Cancelled = true; // simplest approach; could introduce a separate Exception flag
+                await _db.SaveChangesAsync(ct);
             }
         }
     }
