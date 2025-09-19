@@ -1,0 +1,55 @@
+@page "{id:int}"
+@model ResourceBooking.Pages.Bookings.EditModel
+@{
+    ViewData["Title"] = "Edit Booking";
+}
+
+<h2>Edit Booking</h2>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <input asp-for="Input.Id" type="hidden" />
+            <input asp-for="Input.UserId" type="hidden" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.ResourceId" class="form-label">Resource</label>
+                <select asp-for="Input.ResourceId" class="form-select" asp-items="@(new SelectList(Model.Resources, "Id", "Name"))"></select>
+                <span asp-validation-for="Input.ResourceId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.StartTime" class="form-label">Start Time</label>
+                <input asp-for="Input.StartTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="Input.StartTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.EndTime" class="form-label">End Time</label>
+                <input asp-for="Input.EndTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="Input.EndTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.Purpose" class="form-label">Purpose</label>
+                <input asp-for="Input.Purpose" class="form-control" maxlength="500" />
+                <span asp-validation-for="Input.Purpose" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="Input.Cancelled" id="isCancelled" />
+                <label class="form-check-label" asp-for="Input.Cancelled">Cancel this booking</label>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a asp-page="/Bookings/Index" class="btn btn-secondary">Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,118 @@
+@page
+@model ResourceBooking.Pages.Bookings.CreateModel
+@{
+    ViewData["Title"] = "Create Booking";
+}
+
+<h2>Create Booking</h2>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form method="post" id="createBookingForm">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.ResourceId" class="form-label">Resource</label>
+                <select asp-for="Input.ResourceId" class="form-select" asp-items="@(new SelectList(Model.Resources, "Id", "Name"))">
+                    <option value="">-- Choose a resource --</option>
+                </select>
+                <span asp-validation-for="Input.ResourceId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.StartTime" class="form-label">Start Time</label>
+                <input asp-for="Input.StartTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="Input.StartTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.EndTime" class="form-label">End Time</label>
+                <input asp-for="Input.EndTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="Input.EndTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Input.Purpose" class="form-label">Purpose</label>
+                <input asp-for="Input.Purpose" class="form-control" maxlength="500" />
+                <span asp-validation-for="Input.Purpose" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="Input.IsRecurring" id="isRecurring" />
+                <label class="form-check-label" asp-for="Input.IsRecurring">
+                    <i class="bi bi-arrow-repeat"></i> Make this a recurring booking
+                </label>
+            </div>
+
+            <div id="recurringSection" style="display:none;">
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white"><h6 class="mb-0"><i class="bi bi-arrow-repeat"></i> Recurring Settings</h6></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Input.RecurrenceType" class="form-label">Repeat</label>
+                                    <select asp-for="Input.RecurrenceType" class="form-select">
+                                        <option value="">Select frequency...</option>
+                                        <option value="0">Daily</option>
+                                        <option value="1">Weekly</option>
+                                        <option value="2">Monthly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Input.RecurrenceInterval" class="form-label">Every</label>
+                                    <div class="input-group">
+                                        <input asp-for="Input.RecurrenceInterval" type="number" class="form-control" min="1" max="30" value="1" />
+                                        <span class="input-group-text" id="intervalLabel">week(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Input.RecurrenceEndDate" class="form-label">End Date</label>
+                            <input asp-for="Input.RecurrenceEndDate" type="date" class="form-control" />
+                        </div>
+                        <div class="alert alert-info py-2 small mb-0"><i class="bi bi-info-circle"></i> Recurring bookings will be created automatically.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Create Booking</button>
+                <a asp-page="/Bookings/Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Booking Guidelines</h5></div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Select an available resource</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Choose start and end times</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> End time must be after start time</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Provide a clear purpose for the booking</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const isRecurringCheckbox = document.getElementById('isRecurring');
+            const recurringSection = document.getElementById('recurringSection');
+            const recurrenceTypeSelect = document.querySelector('select[name="Input.RecurrenceType"]');
+            const intervalLabel = document.getElementById('intervalLabel');
+            function toggleRecurringSection(){ recurringSection.style.display = isRecurringCheckbox.checked ? 'block' : 'none'; }
+            function updateIntervalLabel(){ const t = recurrenceTypeSelect.value; intervalLabel.textContent = t==='0'?'day(s)': t==='1'?'week(s)': 'month(s)'; }
+            isRecurringCheckbox.addEventListener('change', toggleRecurringSection);
+            recurrenceTypeSelect.addEventListener('change', updateIntervalLabel);
+            toggleRecurringSection(); updateIntervalLabel();
+        });
+    </script>
+}
