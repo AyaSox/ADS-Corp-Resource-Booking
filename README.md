@@ -5,6 +5,16 @@ Live demo: https://resource-booking.onrender.com
 ## Overview
 Professional ASP.NET Core app for booking shared resources (meeting rooms, vehicles, equipment) with notifications and analytics. Uses a hybrid UI: Razor Pages for CRUD (Bookings, Resources) and MVC for complex areas (Dashboard, Reports, Calendar).
 
+## Screenshots
+Below are representative screenshots of key areas of the system. Images are located under `Documentation/`.
+
+- Login: ![Login](Documentation/Home%20LoginScreen.PNG)
+- Dashboard: ![Dashboard](Documentation/Dashboard.PNG)
+- Resources: ![Resources](Documentation/Resources.PNG)
+- Bookings: ![Bookings](Documentation/Bookings.PNG)
+- Calendar: ![Calendar](Documentation/Calendar.PNG)
+- Reports & Analytics: ![Reports & Analytics](Documentation/Reports%26Analytics.PNG)
+
 ## Requirements
 - .NET 8 SDK
 - SQLite (default) or any EF Core-supported DB
@@ -51,11 +61,9 @@ Professional ASP.NET Core app for booking shared resources (meeting rooms, vehic
 - Services: Email, Notifications, Calculations, Recurrence
 - Data: EF Core with migrations and seeders
 
-## Notable Implementation Details
-- UTC storage for timestamps; local time conversion in UI
-- Overlap-aware, business-hour clipped utilization
-- Recurring booking service with CTs, transactions, conflict details
-- Razor Pages folders authorized via Program.cs
+## Test Evidence
+- Documentation/Testing Results Database Resource Booking System.pdf
+- Documentation/Testing Results Resource Booking System.pdf
 
 ## Demo Accounts
 - sipho@company.com / Demo123!
