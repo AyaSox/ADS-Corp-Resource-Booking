@@ -6,6 +6,7 @@
     <title>@ViewData["Title"] - ADS Corp Resource Booking</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dark-theme.css" asp-append-version="true" />
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/calendar.css" asp-append-version="true" />
@@ -94,6 +95,14 @@
                     
                     <!-- Right Side Icons -->
                     <div class="navbar-nav flex-row">
+                        <!-- Theme Toggle Button -->
+                        <div class="nav-item me-2">
+                            <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+                                <i class="bi bi-sun-fill toggle-icon sun"></i>
+                                <i class="bi bi-moon-stars-fill toggle-icon moon"></i>
+                            </button>
+                        </div>
+                        
                         <!-- Notifications Bell -->
                         <div class="nav-item dropdown me-2">
                             <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -1,8 +1,301 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero Section -->
+<div class="hero-section text-center py-5 mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-lg-start mb-4 mb-lg-0">
+                <h1 class="display-3 fw-bold mb-3">Welcome to ADS Corp</h1>
+                <h2 class="h3 text-primary mb-4">Resource Booking System</h2>
+                <p class="lead mb-4">
+                    Streamline your resource management with our professional booking platform. 
+                    Book meeting rooms, vehicles, and equipment effortlessly.
+                </p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg px-4 me-md-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </a>
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-person-plus me-2"></i>Register
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image-container">
+                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop" 
+                         alt="Modern Office Space" 
+                         class="img-fluid rounded shadow-lg">
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Features Section -->
+<div class="container my-5">
+    <div class="row text-center mb-5">
+        <div class="col-12">
+            <h2 class="display-5 fw-bold mb-3">Why Choose Our System?</h2>
+            <p class="lead text-muted">Professional resource management made simple</p>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-calendar-check text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Easy Booking</h3>
+                    <p class="text-muted">
+                        Book resources in seconds with our intuitive interface. 
+                        View availability, select your time slot, and confirm instantly.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Conflict-Free</h3>
+                    <p class="text-muted">
+                        Our intelligent system prevents double bookings automatically. 
+                        Real-time conflict detection ensures smooth operations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-bell text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Smart Notifications</h3>
+                    <p class="text-muted">
+                        Stay informed with email and in-app notifications. 
+                        Get reminders and updates for all your bookings.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-arrow-repeat text-info" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Recurring Bookings</h3>
+                    <p class="text-muted">
+                        Save time with recurring bookings for regular meetings. 
+                        Set up weekly or monthly patterns effortlessly.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-bar-chart text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Analytics & Reports</h3>
+                    <p class="text-muted">
+                        Gain insights with comprehensive reports and analytics. 
+                        Track utilization and optimize resource allocation.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="bi bi-phone text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Mobile Friendly</h3>
+                    <p class="text-muted">
+                        Access from any device, anywhere. 
+                        Our responsive design works perfectly on all screens.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resources Preview Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center mb-4">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">Available Resources</h2>
+                <p class="lead text-muted">Book conference rooms, vehicles, and equipment</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow resource-preview-card">
+                    <img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400&h=250&fit=crop" 
+                         class="card-img-top" 
+                         alt="Conference Room">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-building text-primary me-2"></i>Conference Rooms
+                        </h5>
+                        <p class="card-text text-muted">
+                            Modern meeting spaces equipped with the latest technology for productive collaborations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card border-0 shadow resource-preview-card">
+                    <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&h=250&fit=crop" 
+                         class="card-img-top" 
+                         alt="Vehicle Fleet">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-car-front text-success me-2"></i>Vehicle Fleet
+                        </h5>
+                        <p class="card-text text-muted">
+                            Reliable company vehicles for business trips and client meetings, maintained to perfection.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card border-0 shadow resource-preview-card">
+                    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=250&fit=crop" 
+                         class="card-img-top" 
+                         alt="Equipment">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-tools text-warning me-2"></i>Equipment
+                        </h5>
+                        <p class="card-text text-muted">
+                            Projectors, laptops, and specialized equipment ready when you need them.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="container my-5 py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-5 fw-bold mb-4">Ready to Get Started?</h2>
+            <p class="lead text-muted mb-4">
+                Join ADS Corp and experience efficient resource management today.
+            </p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-person-plus me-2"></i>Create Account
+                </a>
+                <a asp-controller="Help" asp-action="Index" class="btn btn-outline-secondary btn-lg px-5">
+                    <i class="bi bi-question-circle me-2"></i>Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        margin-top: -1rem;
+    }
+    
+    .hero-image-container {
+        position: relative;
+        animation: fadeInRight 1s ease-in-out;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05) !important;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    
+    .resource-preview-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .resource-preview-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.2) !important;
+    }
+    
+    .resource-preview-card img {
+        transition: transform 0.3s ease;
+        height: 250px;
+        object-fit: cover;
+    }
+    
+    .resource-preview-card:hover img {
+        transform: scale(1.05);
+    }
+    
+    .feature-icon {
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @@keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+    
+    /* Dark theme support */
+    [data-theme="dark"] .hero-section {
+        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    }
+    
+    [data-theme="dark"] .feature-card,
+    [data-theme="dark"] .resource-preview-card {
+        background-color: #2d2d2d !important;
+    }
+    
+    [data-theme="dark"] .bg-light {
+        background-color: #252525 !important;
+    }
+</style>
